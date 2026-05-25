@@ -1,0 +1,1718 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control Planta Pellet</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0e1117;
+  --surface:  #161b27;
+  --panel:    #1c2333;
+  --border:   #2a3347;
+  --border2:  #364055;
+  --text:     #e2e8f0;
+  --muted:    #7c8fac;
+  --dim:      #4a5568;
+  --accent:   #3b82f6;
+  --accent2:  #60a5fa;
+  --green:    #22c55e;
+  --green2:   #16a34a;
+  --red:      #ef4444;
+  --red2:     #dc2626;
+  --yellow:   #eab308;
+  --orange:   #f97316;
+  --purple:   #a855f7;
+  --cyan:     #06b6d4;
+  --enesa:    #3b82f6;
+  --klor:     #22c55e;
+  --ecomas:   #f97316;
+  --maxi:     #a855f7;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-ui:  'IBM Plex Sans Condensed', sans-serif;
+  --font-body:'IBM Plex Sans', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 13px; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  height: 52px;
+  flex-shrink: 0;
+  position: sticky; top: 0; z-index: 100;
+}
+.topbar-left { display: flex; align-items: center; gap: 1rem; }
+.logo {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.logo span { color: var(--accent); }
+.badge-live {
+  background: var(--green2);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 3px;
+  letter-spacing: 0.08em;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+.topbar-right { display: flex; align-items: center; gap: 1rem; }
+#clock {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.btn-reset {
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-reset:hover { border-color: var(--red); color: var(--red); }
+
+/* ── NAV TABS ── */
+.nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  padding: 0 1.5rem;
+  gap: 0;
+}
+.nav-tab {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--muted);
+  padding: 10px 16px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all .15s;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.nav-tab:hover { color: var(--text); }
+.nav-tab.active { color: var(--accent2); border-bottom-color: var(--accent); }
+
+/* ── MAIN LAYOUT ── */
+.main { flex: 1; padding: 1.25rem 1.5rem; max-width: 1400px; margin: 0 auto; width: 100%; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ── DASHBOARD ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 1.25rem;
+}
+.kpi {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  position: relative;
+  overflow: hidden;
+}
+.kpi::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+.kpi.enesa::before { background: var(--enesa); }
+.kpi.klor::before  { background: var(--klor); }
+.kpi.ecomas::before{ background: var(--ecomas); }
+.kpi.maxi::before  { background: var(--maxi); }
+.kpi.danger::before{ background: var(--red); }
+.kpi.warn::before  { background: var(--yellow); }
+
+.kpi-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kpi-val {
+  font-family: var(--font-mono);
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1;
+  margin-bottom: 3px;
+}
+.kpi-unit {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--dim);
+  letter-spacing: 0.04em;
+}
+
+.section-title {
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── STOCK TABLE ── */
+.stock-wrap { overflow-x: auto; margin-bottom: 1.25rem; }
+table.stock {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+table.stock th {
+  background: var(--panel);
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 8px 12px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  white-space: nowrap;
+}
+table.stock th:first-child { text-align: left; }
+table.stock td {
+  padding: 9px 12px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+table.stock td:first-child { text-align: left; }
+table.stock tr:hover td { background: var(--panel); }
+.tag {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.tag-enesa  { background: rgba(59,130,246,.15); color: var(--enesa); }
+.tag-klor   { background: rgba(34,197,94,.15);  color: var(--klor); }
+.tag-ecomas { background: rgba(249,115,22,.15); color: var(--ecomas); }
+.tag-maxi   { background: rgba(168,85,247,.15); color: var(--maxi); }
+.tag-gen    { background: rgba(124,143,172,.15);color: var(--muted); }
+.num-pos { color: var(--green); }
+.num-neg { color: var(--red); }
+.num-warn{ color: var(--yellow); }
+
+/* ── LOG TABLE ── */
+.log-wrap { overflow-x: auto; }
+table.log {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+table.log th {
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 7px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+table.log td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  white-space: nowrap;
+}
+table.log tr:hover td { background: var(--panel); }
+.mov-tipo {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.tipo-prod  { background: rgba(34,197,94,.15);  color: var(--green); }
+.tipo-merma { background: rgba(239,68,68,.15);  color: var(--red); }
+.tipo-venta { background: rgba(59,130,246,.15); color: var(--accent2); }
+.tipo-transf{ background: rgba(168,85,247,.15); color: var(--purple); }
+.tipo-devol { background: rgba(6,182,212,.15);  color: var(--cyan); }
+
+/* ── FORM ── */
+.form-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+@media (max-width: 700px) { .form-layout { grid-template-columns: 1fr; } }
+.form-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+.form-panel-title {
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1rem;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+.form-row.full { grid-template-columns: 1fr; }
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+.form-group label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  padding: 7px 10px;
+  outline: none;
+  transition: border-color .15s;
+  width: 100%;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus { border-color: var(--accent); }
+.form-group select option { background: var(--panel); }
+.form-group input[type=number]::-webkit-inner-spin-button { opacity: 1; }
+
+.btn-submit {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 10px 24px;
+  border-radius: 5px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: all .15s;
+  width: 100%;
+  margin-top: 8px;
+}
+.btn-submit:hover { background: var(--accent2); }
+.btn-submit.green { background: var(--green2); }
+.btn-submit.green:hover { background: var(--green); }
+.btn-submit.red { background: var(--red2); }
+.btn-submit.red:hover { background: var(--red); }
+.btn-submit.purple { background: #7c3aed; }
+.btn-submit.purple:hover { background: var(--purple); }
+
+.alert {
+  border-radius: 5px;
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  margin-top: 8px;
+  display: none;
+}
+.alert.ok  { background: rgba(34,197,94,.12); color: var(--green); border: 1px solid rgba(34,197,94,.3); display: block; }
+.alert.err { background: rgba(239,68,68,.12); color: var(--red);   border: 1px solid rgba(239,68,68,.3); display: block; }
+
+/* ── MERMA SECTION ── */
+.merma-box {
+  background: rgba(239,68,68,.06);
+  border: 1px solid rgba(239,68,68,.2);
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 10px;
+}
+/* ── PRODUCT GRID INPUT ── */
+.prod-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.prod-input-group {
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 5px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.prod-input-group label {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.prod-input-group input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border2);
+  border-radius: 0;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 3px 0;
+  outline: none;
+  width: 100%;
+  text-align: right;
+  transition: border-color .15s;
+}
+.prod-input-group input:focus { border-bottom-color: var(--accent); }
+.prod-label-enesa  { color: var(--enesa); }
+.prod-label-klor   { color: var(--klor); }
+.prod-label-ecomas { color: var(--ecomas); }
+.prod-label-maxi   { color: var(--maxi); }
+.prod-label-gen    { color: var(--muted); }
+
+/* ── EMPTY STATE ── */
+.empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--dim);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+.empty-icon { font-size: 2rem; margin-bottom: 8px; opacity: .4; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ── DIVIDER ── */
+.vr { width: 1px; background: var(--border); align-self: stretch; }
+
+/* ── COLORES por tipo en summary ── */
+.sum-row-prod td:first-child { border-left: 3px solid var(--green); }
+.sum-row-merma td:first-child { border-left: 3px solid var(--red); }
+.sum-row-venta td:first-child { border-left: 3px solid var(--accent); }
+.sum-row-transf td:first-child { border-left: 3px solid var(--purple); }
+
+/* Tooltip stock bajo */
+.stock-low { color: var(--yellow) !important; font-weight: 600; }
+.stock-zero { color: var(--red) !important; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo">PELLET<span>.</span>CTRL</div>
+    <div class="badge-live">EN VIVO</div>
+  </div>
+  <div class="topbar-right">
+    <div id="clock">--:--:--</div>
+    <button class="btn-reset" onclick="resetAll()">⚠ Reset datos</button>
+  </div>
+</div>
+
+<div class="nav">
+  <div class="nav-tab active" onclick="showTab('dashboard')">Dashboard</div>
+  <div class="nav-tab" onclick="showTab('produccion')">+ Producción</div>
+  <div class="nav-tab" onclick="showTab('merma')">+ Merma</div>
+  <div class="nav-tab" onclick="showTab('despacho')">+ Despacho</div>
+  <div class="nav-tab" onclick="showTab('devolucion')">+ Devolución</div>
+  <div class="nav-tab" onclick="showTab('transformacion')">+ Transformación</div>
+  <div class="nav-tab" onclick="showTab('historial')">Historial</div>
+</div>
+
+<div class="main">
+
+<!-- ══ DASHBOARD ══════════════════════════════════════════════════════════ -->
+<div id="tab-dashboard" class="tab-content active">
+  <div class="section-title" style="margin-bottom:12px">Stock actual</div>
+  <div class="kpi-grid" id="kpi-grid"></div>
+
+  <div class="section-title">Detalle de inventario</div>
+  <div class="stock-wrap">
+    <table class="stock">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Cliente</th>
+          <th>Unidades</th>
+          <th>Kg/unidad</th>
+          <th>Total kg</th>
+          <th>Producido hoy</th>
+          <th>Despachado hoy</th>
+          <th>Merma hoy</th>
+        </tr>
+      </thead>
+      <tbody id="stock-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="section-title" style="margin-top:1.25rem">Resumen del día</div>
+  <div class="stock-wrap">
+    <table class="stock">
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Producto</th>
+          <th>Cliente</th>
+          <th>Unidades</th>
+          <th>Total kg</th>
+          <th>Turno</th>
+          <th>Hora</th>
+        </tr>
+      </thead>
+      <tbody id="resumen-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ PRODUCCIÓN ══════════════════════════════════════════════════════════ -->
+<div id="tab-produccion" class="tab-content">
+  <div class="form-layout">
+    <div class="form-panel">
+      <div class="form-panel-title">▶ Datos del turno</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" id="p-fecha">
+        </div>
+        <div class="form-group">
+          <label>Turno</label>
+          <select id="p-turno">
+            <option value="Día">Día</option>
+            <option value="Noche">Noche</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Operador</label>
+          <input type="text" id="p-operador" placeholder="Nombre del operador">
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Observación</label>
+          <input type="text" id="p-obs" placeholder="Opcional">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-panel">
+      <div class="form-panel-title">▶ Unidades producidas por producto</div>
+      <div class="prod-grid" id="prod-grid-prod"></div>
+      <button class="btn-submit green" onclick="registrarProduccion()">Registrar producción</button>
+      <div id="p-alert" class="alert"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MERMA ══════════════════════════════════════════════════════════════ -->
+<div id="tab-merma" class="tab-content">
+  <div class="form-layout">
+    <div class="form-panel">
+      <div class="form-panel-title">▶ Datos del turno</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" id="m-fecha">
+        </div>
+        <div class="form-group">
+          <label>Turno</label>
+          <select id="m-turno">
+            <option value="Día">Día</option>
+            <option value="Noche">Noche</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Motivo del rechazo</label>
+          <input type="text" id="m-motivo" placeholder="Ej: humedad, rotura, fuera de especificación">
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>¿Se puede reprocesar?</label>
+          <select id="m-reproceso" onchange="toggleReproceso()">
+            <option value="No">No — va a merma definitiva</option>
+            <option value="Sí">Sí — se puede reprocesar</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- PANEL REPROCESO (oculto hasta que elige Sí) -->
+      <div id="reproceso-panel" style="display:none;margin-top:10px;background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.25);border-radius:6px;padding:12px">
+        <div style="font-family:var(--font-mono);font-size:.65rem;color:var(--purple);font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">▶ ¿En qué se reprocesa? (el kg que entra no puede superar el kg que sale)</div>
+
+        <!-- kg disponibles para reprocesar (se calcula dinámico) -->
+        <div id="m-kg-disp" style="font-family:var(--font-mono);font-size:.75rem;color:var(--muted);margin-bottom:8px;padding:6px 10px;background:var(--bg);border-radius:4px;border:1px solid var(--border)">
+          Completa las unidades rechazadas para ver los kg disponibles
+        </div>
+
+        <div style="font-family:var(--font-mono);font-size:.68rem;color:var(--muted);margin-bottom:6px">Producto destino del reproceso:</div>
+        <select id="m-repr-prod" style="background:var(--bg);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-family:var(--font-mono);font-size:.78rem;padding:7px 10px;width:100%;outline:none;margin-bottom:8px" onchange="calcularReproceso()"></select>
+
+        <div style="font-family:var(--font-mono);font-size:.68rem;color:var(--muted);margin-bottom:4px">Unidades que entran al destino:</div>
+        <input type="number" id="m-repr-unid" min="0" step="1" placeholder="0"
+          style="background:var(--bg);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-family:var(--font-mono);font-size:.9rem;font-weight:600;padding:7px 10px;width:100%;outline:none;margin-bottom:8px"
+          oninput="calcularReproceso()">
+
+        <!-- Resumen kg: salen vs entran vs pérdida -->
+        <div id="m-repr-resumen" style="display:none;border-radius:5px;padding:8px 12px;font-family:var(--font-mono);font-size:.75rem;margin-top:4px"></div>
+      </div>
+    </div>
+
+    <div class="form-panel">
+      <div class="form-panel-title">▶ Unidades rechazadas por producto</div>
+      <div class="prod-grid" id="prod-grid-merma"></div>
+      <button class="btn-submit red" onclick="registrarMerma()">Registrar merma</button>
+      <div id="m-alert" class="alert"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DESPACHO ════════════════════════════════════════════════════════════ -->
+<div id="tab-despacho" class="tab-content">
+  <div class="form-layout">
+    <div class="form-panel">
+      <div class="form-panel-title">▶ Datos del despacho</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" id="d-fecha">
+        </div>
+        <div class="form-group">
+          <label>Turno</label>
+          <select id="d-turno">
+            <option value="Día">Día</option>
+            <option value="Noche">Noche</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>N° Guía de despacho</label>
+          <input type="text" id="d-guia" placeholder="Ej: 001234">
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Tipo de venta</label>
+          <select id="d-tipoventa">
+            <option value="Venta final">Venta final</option>
+            <option value="Venta interna">Venta interna</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Observación</label>
+          <input type="text" id="d-obs" placeholder="Opcional">
+        </div>
+      </div>
+    </div>
+
+    <div class="form-panel">
+      <div class="form-panel-title">▶ Unidades despachadas por producto</div>
+      <div class="prod-grid" id="prod-grid-despacho"></div>
+      <button class="btn-submit" onclick="registrarDespacho()">Registrar despacho</button>
+      <div id="d-alert" class="alert"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TRANSFORMACIÓN ══════════════════════════════════════════════════════ -->
+<div id="tab-transformacion" class="tab-content">
+  <div class="form-layout">
+    <div class="form-panel">
+      <div class="form-panel-title">▶ Transformación de producto</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" id="t-fecha">
+        </div>
+        <div class="form-group">
+          <label>Turno</label>
+          <select id="t-turno">
+            <option value="Día">Día</option>
+            <option value="Noche">Noche</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Producto ORIGEN (sale del stock)</label>
+          <select id="t-origen" onchange="calcularResumenTransf()"></select>
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Unidades que salen del origen</label>
+          <input type="number" id="t-unid-origen" min="0" step="1" placeholder="0" oninput="calcularResumenTransf()">
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Producto DESTINO (entra al stock)</label>
+          <select id="t-destino" onchange="calcularResumenTransf()"></select>
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Unidades que entran al destino</label>
+          <input type="number" id="t-unid-destino" min="0" step="1" placeholder="0" oninput="calcularResumenTransf()">
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Motivo de la transformación</label>
+          <input type="text" id="t-motivo" placeholder="Ej: Saca dañada se pasa a bolsas">
+        </div>
+      </div>
+      <!-- Resumen kg transformación -->
+      <div id="t-resumen" style="display:none;border-radius:5px;padding:8px 12px;font-family:var(--font-mono);font-size:.75rem;margin-bottom:8px"></div>
+      <button class="btn-submit purple" onclick="registrarTransformacion()">Registrar transformación</button>
+      <div id="t-alert" class="alert"></div>
+    </div>
+
+    <div class="form-panel">
+      <div class="form-panel-title">▶ Resumen stock actual</div>
+      <div id="t-stock-preview"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DEVOLUCIÓN ══════════════════════════════════════════════════════════ -->
+<div id="tab-devolucion" class="tab-content">
+  <div class="form-layout">
+    <div class="form-panel">
+      <div class="form-panel-title">▶ Datos de la devolución</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" id="dev-fecha">
+        </div>
+        <div class="form-group">
+          <label>Turno</label>
+          <select id="dev-turno">
+            <option value="Día">Día</option>
+            <option value="Noche">Noche</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Origen de la devolución</label>
+          <select id="dev-origen">
+            <option value="Cliente externo — Enesa">Cliente externo — Enesa</option>
+            <option value="Cliente externo — K-lor">Cliente externo — K-lor</option>
+            <option value="Cliente externo — Ecomas">Cliente externo — Ecomas</option>
+            <option value="Cliente externo — Otro">Cliente externo — Otro</option>
+            <option value="Venta interna">Venta interna</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>N° Guía / Referencia</label>
+          <input type="text" id="dev-guia" placeholder="Opcional — Ej: guía 001234">
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Motivo de la devolución</label>
+          <input type="text" id="dev-motivo" placeholder="Ej: error de pedido, exceso de stock, producto dañado">
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Estado del producto devuelto</label>
+          <select id="dev-estado" onchange="toggleDevEstado()">
+            <option value="Bueno">Bueno — ingresa directo al stock</option>
+            <option value="Reprocesable">Reprocesable — se transforma antes de ingresar</option>
+            <option value="Dañado">Dañado — va a merma definitiva</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Panel reproceso (igual al de merma) -->
+      <div id="dev-repr-panel" style="display:none;margin-top:10px;background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.25);border-radius:6px;padding:12px">
+        <div style="font-family:var(--font-mono);font-size:.65rem;color:var(--purple);font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">▶ ¿En qué se reprocesa? (kg que entran ≤ kg devueltos)</div>
+        <div id="dev-kg-disp" style="font-family:var(--font-mono);font-size:.75rem;color:var(--muted);margin-bottom:8px;padding:6px 10px;background:var(--bg);border-radius:4px;border:1px solid var(--border)">
+          Completa las unidades devueltas para ver los kg disponibles
+        </div>
+        <div style="font-family:var(--font-mono);font-size:.68rem;color:var(--muted);margin-bottom:6px">Producto destino del reproceso:</div>
+        <select id="dev-repr-prod" style="background:var(--bg);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-family:var(--font-mono);font-size:.78rem;padding:7px 10px;width:100%;outline:none;margin-bottom:8px" onchange="calcularDevReproceso()"></select>
+        <div style="font-family:var(--font-mono);font-size:.68rem;color:var(--muted);margin-bottom:4px">Unidades que entran al destino:</div>
+        <input type="number" id="dev-repr-unid" min="0" step="1" placeholder="0"
+          style="background:var(--bg);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-family:var(--font-mono);font-size:.9rem;font-weight:600;padding:7px 10px;width:100%;outline:none;margin-bottom:8px"
+          oninput="calcularDevReproceso()">
+        <div id="dev-repr-resumen" style="display:none;border-radius:5px;padding:8px 12px;font-family:var(--font-mono);font-size:.75rem"></div>
+      </div>
+    </div>
+
+    <div class="form-panel">
+      <div class="form-panel-title">▶ Unidades devueltas por producto</div>
+      <div class="prod-grid" id="prod-grid-dev"></div>
+      <button class="btn-submit" style="background:#0891b2" onclick="registrarDevolucion()">Registrar devolución</button>
+      <div id="dev-alert" class="alert"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ HISTORIAL ═══════════════════════════════════════════════════════════ -->
+<div id="tab-historial" class="tab-content">
+  <div style="display:flex;gap:10px;margin-bottom:1rem;flex-wrap:wrap;align-items:center">
+    <div class="form-group" style="flex:0 0 140px">
+      <label style="font-family:var(--font-mono);font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Filtrar por fecha</label>
+      <input type="date" id="h-filtro-fecha" oninput="renderHistorial()" style="background:var(--panel);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-family:var(--font-mono);font-size:.78rem;padding:6px 8px;outline:none">
+    </div>
+    <div class="form-group" style="flex:0 0 160px">
+      <label style="font-family:var(--font-mono);font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Tipo</label>
+      <select id="h-filtro-tipo" oninput="renderHistorial()" style="background:var(--panel);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-family:var(--font-mono);font-size:.78rem;padding:6px 8px;outline:none">
+        <option value="">Todos</option>
+        <option value="Producción">Producción</option>
+        <option value="Merma">Merma</option>
+        <option value="Despacho">Despacho</option>
+        <option value="Devolución">Devolución</option>
+        <option value="Transformación">Transformación</option>
+      </select>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+      <span style="font-family:var(--font-mono);font-size:.7rem;color:var(--muted)" id="h-count"></span>
+      <button onclick="exportarExcel()" style="background:var(--green2);color:#fff;border:none;font-family:var(--font-ui);font-size:.8rem;font-weight:600;padding:6px 14px;border-radius:4px;cursor:pointer;letter-spacing:.03em;transition:background .15s" onmouseover="this.style.background='var(--green)'" onmouseout="this.style.background='var(--green2)'">⬇ Descargar Excel</button>
+    </div>
+  </div>
+  <div class="log-wrap">
+    <table class="log">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Turno</th>
+          <th>Tipo</th>
+          <th>Producto</th>
+          <th>Cliente</th>
+          <th>Unidades</th>
+          <th>Total kg</th>
+          <th>Detalle</th>
+          <th>Operador</th>
+        </tr>
+      </thead>
+      <tbody id="historial-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════
+// DATOS
+// ══════════════════════════════════════════════════════════════════════════
+const PRODUCTOS = [
+  { id: 'bolsa-enesa',  nombre: 'Bolsa 15 kg',    cliente: 'Enesa',  kgU: 15,   tipo: 'bolsa',  colorClass: 'prod-label-enesa'  },
+  { id: 'bolsa-klor',   nombre: 'Bolsa 15 kg',    cliente: 'K-lor',  kgU: 15,   tipo: 'bolsa',  colorClass: 'prod-label-klor'   },
+  { id: 'bolsa-ecomas', nombre: 'Bolsa 15 kg',    cliente: 'Ecomas', kgU: 15,   tipo: 'bolsa',  colorClass: 'prod-label-ecomas' },
+  { id: 'maxi1000-gen', nombre: 'Maxisaco 1000',  cliente: 'Genérico',kgU:1000, tipo: 'maxi',   colorClass: 'prod-label-maxi'   },
+  { id: 'maxi1000-ene', nombre: 'Maxisaco 1000',  cliente: 'Enesa',  kgU: 1000, tipo: 'maxi',   colorClass: 'prod-label-enesa'  },
+  { id: 'maxi1000-klo', nombre: 'Maxisaco 1000',  cliente: 'K-lor',  kgU: 1000, tipo: 'maxi',   colorClass: 'prod-label-klor'   },
+  { id: 'maxi1000-eco', nombre: 'Maxisaco 1000',  cliente: 'Ecomas', kgU: 1000, tipo: 'maxi',   colorClass: 'prod-label-ecomas' },
+  { id: 'maxi1200-gen', nombre: 'Maxisaco 1200',  cliente: 'Genérico',kgU:1200, tipo: 'maxi',   colorClass: 'prod-label-maxi'   },
+  { id: 'maxi1200-ene', nombre: 'Maxisaco 1200',  cliente: 'Enesa',  kgU: 1200, tipo: 'maxi',   colorClass: 'prod-label-enesa'  },
+  { id: 'maxi1200-klo', nombre: 'Maxisaco 1200',  cliente: 'K-lor',  kgU: 1200, tipo: 'maxi',   colorClass: 'prod-label-klor'   },
+  { id: 'maxi1200-eco', nombre: 'Maxisaco 1200',  cliente: 'Ecomas', kgU: 1200, tipo: 'maxi',   colorClass: 'prod-label-ecomas' },
+];
+
+const TAG_CLASE = { 'Enesa':'tag-enesa','K-lor':'tag-klor','Ecomas':'tag-ecomas','Genérico':'tag-gen' };
+const TIPO_CLASE = { 'Producción':'tipo-prod','Merma':'tipo-merma','Despacho':'tipo-venta','Transformación':'tipo-transf','Devolución':'tipo-devol' };
+
+function loadData() {
+  try { return JSON.parse(localStorage.getItem('pellet_movs') || '[]'); } catch(e) { return []; }
+}
+function saveData(movs) {
+  localStorage.setItem('pellet_movs', JSON.stringify(movs));
+}
+function loadStock() {
+  try { return JSON.parse(localStorage.getItem('pellet_stock') || '{}'); } catch(e) { return {}; }
+}
+function saveStock(s) {
+  localStorage.setItem('pellet_stock', JSON.stringify(s));
+}
+
+// Stock inicial (si no existe)
+function initStock() {
+  let s = loadStock();
+  let changed = false;
+  PRODUCTOS.forEach(p => { if (s[p.id] === undefined) { s[p.id] = 0; changed = true; } });
+  if (changed) saveStock(s);
+  return s;
+}
+
+function getToday() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// RELOJ
+// ══════════════════════════════════════════════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric'}) + '  ' +
+    now.toLocaleTimeString('es-CL');
+}
+setInterval(updateClock, 1000); updateClock();
+
+// ══════════════════════════════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════════════════════════════
+function showTab(id) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  const tabs = ['dashboard','produccion','merma','despacho','devolucion','transformacion','historial'];
+  document.querySelectorAll('.nav-tab')[tabs.indexOf(id)].classList.add('active');
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'historial') renderHistorial();
+  if (id === 'transformacion') renderTransfStock();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// PROD GRIDS (inputs dinámicos)
+// ══════════════════════════════════════════════════════════════════════════
+function buildProdGrid(containerId, prefix) {
+  const c = document.getElementById(containerId);
+  c.innerHTML = '';
+  PRODUCTOS.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'prod-input-group';
+    div.innerHTML = `
+      <label class="${p.colorClass}">${p.nombre}<br><span style="opacity:.6;font-size:.6rem">${p.cliente} · ${p.kgU} kg/u</span></label>
+      <input type="number" id="${prefix}-${p.id}" min="0" step="1" placeholder="0" value="">
+    `;
+    c.appendChild(div);
+  });
+}
+
+function getInputsValues(prefix) {
+  const vals = {};
+  PRODUCTOS.forEach(p => {
+    const el = document.getElementById(prefix + '-' + p.id);
+    vals[p.id] = el ? (parseFloat(el.value) || 0) : 0;
+  });
+  return vals;
+}
+
+function clearInputs(prefix) {
+  PRODUCTOS.forEach(p => {
+    const el = document.getElementById(prefix + '-' + p.id);
+    if (el) el.value = '';
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// SELECTS DE TRANSFORMACIÓN
+// ══════════════════════════════════════════════════════════════════════════
+function buildTransfSelects() {
+  ['t-origen','t-destino'].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '';
+    PRODUCTOS.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = `${p.nombre} — ${p.cliente} (${p.kgU} kg/u)`;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// REGISTRAR MOVIMIENTOS
+// ══════════════════════════════════════════════════════════════════════════
+function showAlert(id, msg, tipo) {
+  const el = document.getElementById(id);
+  el.className = 'alert ' + tipo;
+  el.textContent = msg;
+  setTimeout(() => { el.className = 'alert'; el.textContent = ''; }, 3500);
+}
+
+function registrarProduccion() {
+  const fecha = document.getElementById('p-fecha').value;
+  const turno = document.getElementById('p-turno').value;
+  const operador = document.getElementById('p-operador').value.trim();
+  const obs = document.getElementById('p-obs').value.trim();
+  if (!fecha) return showAlert('p-alert', 'Selecciona la fecha', 'err');
+
+  const vals = getInputsValues('pp');
+  const total = Object.values(vals).reduce((a,b)=>a+b,0);
+  if (total === 0) return showAlert('p-alert', 'Ingresa al menos una unidad', 'err');
+
+  const s = loadStock();
+  const movs = loadData();
+  const hora = new Date().toLocaleTimeString('es-CL');
+
+  PRODUCTOS.forEach(p => {
+    if (vals[p.id] > 0) {
+      s[p.id] = (s[p.id] || 0) + vals[p.id];
+      movs.push({
+        fecha, turno, tipo: 'Producción',
+        prodId: p.id, prodNombre: p.nombre, cliente: p.cliente,
+        kgU: p.kgU, unidades: vals[p.id],
+        totalKg: vals[p.id] * p.kgU,
+        detalle: obs || '—', operador: operador || '—', hora
+      });
+    }
+  });
+
+  saveStock(s); saveData(movs);
+  clearInputs('pp');
+  document.getElementById('p-obs').value = '';
+  showAlert('p-alert', `✓ Producción registrada — ${total} unidades`, 'ok');
+  renderDashboard();
+}
+
+// ── Mostrar/ocultar panel reproceso ──────────────────────────────────────
+function toggleReproceso() {
+  const val = document.getElementById('m-reproceso').value;
+  document.getElementById('reproceso-panel').style.display = val === 'Sí' ? 'block' : 'none';
+  calcularKgDisponibles();
+}
+
+// Recalcular kg disponibles cada vez que cambia algún input de merma
+function calcularKgDisponibles() {
+  if (document.getElementById('m-reproceso').value !== 'Sí') return;
+  const vals = getInputsValues('pm');
+  let kgTotal = 0;
+  PRODUCTOS.forEach(p => { kgTotal += (vals[p.id] || 0) * p.kgU; });
+  const el = document.getElementById('m-kg-disp');
+  if (kgTotal === 0) {
+    el.textContent = 'Completa las unidades rechazadas para ver los kg disponibles';
+    el.style.color = 'var(--muted)';
+  } else {
+    el.innerHTML = `Kg rechazados disponibles para reprocesar: <strong style="color:var(--yellow)">${kgTotal.toLocaleString('es-CL')} kg</strong>`;
+    el.style.color = 'var(--text)';
+  }
+  calcularReproceso();
+}
+
+// Calcular resumen kg salen vs entran vs pérdida
+function calcularReproceso() {
+  const vals = getInputsValues('pm');
+  let kgSalen = 0;
+  PRODUCTOS.forEach(p => { kgSalen += (vals[p.id] || 0) * p.kgU; });
+
+  const prodDestId = document.getElementById('m-repr-prod').value;
+  const unidDest = parseFloat(document.getElementById('m-repr-unid').value) || 0;
+  const pDest = PRODUCTOS.find(p => p.id === prodDestId);
+  const kgEntran = pDest ? unidDest * pDest.kgU : 0;
+  const perdida = kgSalen - kgEntran;
+
+  const resDiv = document.getElementById('m-repr-resumen');
+  if (kgSalen === 0 || unidDest === 0) { resDiv.style.display = 'none'; return; }
+
+  resDiv.style.display = 'block';
+
+  if (kgEntran > kgSalen) {
+    resDiv.style.background = 'rgba(239,68,68,.12)';
+    resDiv.style.border = '1px solid rgba(239,68,68,.3)';
+    resDiv.innerHTML = `<span style="color:var(--red)">⛔ Error: los kg que entran (${kgEntran.toLocaleString('es-CL')}) no pueden superar los kg rechazados (${kgSalen.toLocaleString('es-CL')}). Reducí las unidades.</span>`;
+  } else {
+    const pct = kgSalen > 0 ? ((perdida / kgSalen) * 100).toFixed(1) : 0;
+    resDiv.style.background = 'rgba(168,85,247,.08)';
+    resDiv.style.border = '1px solid rgba(168,85,247,.25)';
+    resDiv.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+        <div><div style="color:var(--red);font-size:.7rem">KG QUE SALEN</div><div style="font-size:1rem;font-weight:600;color:var(--red)">${kgSalen.toLocaleString('es-CL')}</div></div>
+        <div><div style="color:var(--green);font-size:.7rem">KG QUE ENTRAN</div><div style="font-size:1rem;font-weight:600;color:var(--green)">${kgEntran.toLocaleString('es-CL')}</div></div>
+        <div><div style="color:var(--yellow);font-size:.7rem">PÉRDIDA NETA</div><div style="font-size:1rem;font-weight:600;color:var(--yellow)">${perdida.toLocaleString('es-CL')} kg <span style="font-size:.7rem">(${pct}%)</span></div></div>
+      </div>`;
+  }
+}
+
+function registrarMerma() {
+  const fecha = document.getElementById('m-fecha').value;
+  const turno = document.getElementById('m-turno').value;
+  const motivo = document.getElementById('m-motivo').value.trim();
+  const reproceso = document.getElementById('m-reproceso').value;
+  if (!fecha) return showAlert('m-alert', 'Selecciona la fecha', 'err');
+
+  const vals = getInputsValues('pm');
+  const total = Object.values(vals).reduce((a,b)=>a+b,0);
+  if (total === 0) return showAlert('m-alert', 'Ingresa al menos una unidad', 'err');
+
+  // Calcular kg totales rechazados
+  let kgSalen = 0;
+  PRODUCTOS.forEach(p => { kgSalen += (vals[p.id] || 0) * p.kgU; });
+
+  // Validar reproceso si aplica
+  let reprProd = null, reprUnid = 0, kgEntran = 0;
+  if (reproceso === 'Sí') {
+    const reprProdId = document.getElementById('m-repr-prod').value;
+    reprUnid = parseFloat(document.getElementById('m-repr-unid').value) || 0;
+    reprProd = PRODUCTOS.find(p => p.id === reprProdId);
+    kgEntran = reprProd ? reprUnid * reprProd.kgU : 0;
+
+    if (reprUnid <= 0) return showAlert('m-alert', 'Ingresa las unidades del reproceso', 'err');
+    if (kgEntran > kgSalen) return showAlert('m-alert',
+      `Los kg que entran (${kgEntran.toLocaleString('es-CL')}) no pueden superar los kg rechazados (${kgSalen.toLocaleString('es-CL')})`, 'err');
+  }
+
+  const s = loadStock();
+  const movs = loadData();
+  const hora = new Date().toLocaleTimeString('es-CL');
+  const perdidaNeta = kgSalen - kgEntran;
+
+  // 1. Registrar merma (resta del stock)
+  PRODUCTOS.forEach(p => {
+    if (vals[p.id] > 0) {
+      s[p.id] = Math.max(0, (s[p.id] || 0) - vals[p.id]);
+      movs.push({
+        fecha, turno, tipo: 'Merma',
+        prodId: p.id, prodNombre: p.nombre, cliente: p.cliente,
+        kgU: p.kgU, unidades: vals[p.id],
+        totalKg: vals[p.id] * p.kgU,
+        detalle: `${motivo || 'Sin motivo'} · ${reproceso === 'Sí' ? `Reprocesa → ${reprProd.nombre} ${reprProd.cliente} | Pérdida neta: ${perdidaNeta.toLocaleString('es-CL')} kg` : 'Merma definitiva'}`,
+        operador: '—', hora
+      });
+    }
+  });
+
+  // 2. Si hay reproceso, registrar la transformación de entrada
+  if (reproceso === 'Sí' && reprProd && reprUnid > 0) {
+    s[reprProd.id] = (s[reprProd.id] || 0) + reprUnid;
+    movs.push({
+      fecha, turno, tipo: 'Transformación',
+      prodId: reprProd.id, prodNombre: reprProd.nombre, cliente: reprProd.cliente,
+      kgU: reprProd.kgU, unidades: reprUnid,
+      totalKg: kgEntran,
+      detalle: `Reproceso desde merma · ${motivo || 'Sin motivo'} · Pérdida neta: ${perdidaNeta.toLocaleString('es-CL')} kg`,
+      operador: '—', hora
+    });
+  }
+
+  saveStock(s); saveData(movs);
+  clearInputs('pm');
+  document.getElementById('m-motivo').value = '';
+  document.getElementById('m-reproceso').value = 'No';
+  document.getElementById('m-repr-unid').value = '';
+  document.getElementById('reproceso-panel').style.display = 'none';
+  document.getElementById('m-repr-resumen').style.display = 'none';
+
+  const msg = reproceso === 'Sí'
+    ? `✓ Merma registrada y reprocesada → ${reprProd.nombre} ${reprProd.cliente} (${reprUnid} u) | Pérdida neta: ${perdidaNeta.toLocaleString('es-CL')} kg`
+    : `✓ Merma definitiva registrada — ${kgSalen.toLocaleString('es-CL')} kg`;
+  showAlert('m-alert', msg, 'ok');
+  renderDashboard();
+}
+
+function registrarDespacho() {
+  const fecha = document.getElementById('d-fecha').value;
+  const turno = document.getElementById('d-turno').value;
+  const guia = document.getElementById('d-guia').value.trim();
+  const tipoventa = document.getElementById('d-tipoventa').value;
+  const obs = document.getElementById('d-obs').value.trim();
+  if (!fecha) return showAlert('d-alert', 'Selecciona la fecha', 'err');
+  if (!guia) return showAlert('d-alert', 'Ingresa el número de guía', 'err');
+
+  const vals = getInputsValues('pd');
+  const total = Object.values(vals).reduce((a,b)=>a+b,0);
+  if (total === 0) return showAlert('d-alert', 'Ingresa al menos una unidad', 'err');
+
+  const s = loadStock();
+  const movs = loadData();
+  const hora = new Date().toLocaleTimeString('es-CL');
+
+  let error = null;
+  PRODUCTOS.forEach(p => {
+    if (vals[p.id] > 0 && (s[p.id] || 0) < vals[p.id]) {
+      error = `Stock insuficiente: ${p.nombre} ${p.cliente} — stock: ${s[p.id] || 0}, pedido: ${vals[p.id]}`;
+    }
+  });
+  if (error) return showAlert('d-alert', error, 'err');
+
+  PRODUCTOS.forEach(p => {
+    if (vals[p.id] > 0) {
+      s[p.id] = Math.max(0, (s[p.id] || 0) - vals[p.id]);
+      movs.push({
+        fecha, turno, tipo: 'Despacho',
+        prodId: p.id, prodNombre: p.nombre, cliente: p.cliente,
+        kgU: p.kgU, unidades: vals[p.id],
+        totalKg: vals[p.id] * p.kgU,
+        detalle: `Guía: ${guia} · ${tipoventa}${obs?' · '+obs:''}`,
+        operador: '—', hora
+      });
+    }
+  });
+
+  saveStock(s); saveData(movs);
+  clearInputs('pd');
+  document.getElementById('d-guia').value = '';
+  document.getElementById('d-obs').value = '';
+  showAlert('d-alert', `✓ Despacho registrado — Guía ${guia}`, 'ok');
+  renderDashboard();
+}
+
+function calcularResumenTransf() {
+  const origenId  = document.getElementById('t-origen').value;
+  const destinoId = document.getElementById('t-destino').value;
+  const unidOrig  = parseFloat(document.getElementById('t-unid-origen').value) || 0;
+  const unidDest  = parseFloat(document.getElementById('t-unid-destino').value) || 0;
+  const resDiv    = document.getElementById('t-resumen');
+
+  if (!origenId || !destinoId || unidOrig === 0 || unidDest === 0) {
+    resDiv.style.display = 'none'; return;
+  }
+  const pOrig = PRODUCTOS.find(p => p.id === origenId);
+  const pDest = PRODUCTOS.find(p => p.id === destinoId);
+  if (!pOrig || !pDest) return;
+
+  const kgSalen   = unidOrig * pOrig.kgU;
+  const kgEntran  = unidDest * pDest.kgU;
+  const perdida   = kgSalen - kgEntran;
+  resDiv.style.display = 'block';
+
+  if (kgEntran > kgSalen) {
+    resDiv.style.background = 'rgba(239,68,68,.12)';
+    resDiv.style.border = '1px solid rgba(239,68,68,.3)';
+    resDiv.innerHTML = `<span style="color:var(--red)">⛔ Los kg que entran (${kgEntran.toLocaleString('es-CL')}) no pueden superar los kg que salen (${kgSalen.toLocaleString('es-CL')})</span>`;
+  } else {
+    const pct = kgSalen > 0 ? ((perdida / kgSalen) * 100).toFixed(1) : 0;
+    resDiv.style.background = 'rgba(168,85,247,.08)';
+    resDiv.style.border = '1px solid rgba(168,85,247,.25)';
+    resDiv.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+        <div><div style="color:var(--red);font-size:.65rem">KG QUE SALEN</div><div style="font-size:.95rem;font-weight:600;color:var(--red)">${kgSalen.toLocaleString('es-CL')}</div></div>
+        <div><div style="color:var(--green);font-size:.65rem">KG QUE ENTRAN</div><div style="font-size:.95rem;font-weight:600;color:var(--green)">${kgEntran.toLocaleString('es-CL')}</div></div>
+        <div><div style="color:var(--yellow);font-size:.65rem">PÉRDIDA NETA</div><div style="font-size:.95rem;font-weight:600;color:var(--yellow)">${perdida.toLocaleString('es-CL')} kg <span style="font-size:.65rem">(${pct}%)</span></div></div>
+      </div>`;
+  }
+}
+
+function registrarTransformacion() {
+  const fecha = document.getElementById('t-fecha').value;
+  const turno = document.getElementById('t-turno').value;
+  const origen = document.getElementById('t-origen').value;
+  const destino = document.getElementById('t-destino').value;
+  const unidOrig = parseFloat(document.getElementById('t-unid-origen').value) || 0;
+  const unidDest = parseFloat(document.getElementById('t-unid-destino').value) || 0;
+  const motivo = document.getElementById('t-motivo').value.trim();
+
+  if (!fecha) return showAlert('t-alert', 'Selecciona la fecha', 'err');
+  if (origen === destino) return showAlert('t-alert', 'Origen y destino no pueden ser iguales', 'err');
+  if (unidOrig <= 0 || unidDest <= 0) return showAlert('t-alert', 'Ingresa unidades en ambos campos', 'err');
+
+  const pOrig = PRODUCTOS.find(p => p.id === origen);
+  const pDest = PRODUCTOS.find(p => p.id === destino);
+  const kgSalen  = unidOrig * pOrig.kgU;
+  const kgEntran = unidDest * pDest.kgU;
+
+  if (kgEntran > kgSalen) return showAlert('t-alert',
+    `Los kg que entran (${kgEntran.toLocaleString('es-CL')}) no pueden superar los kg que salen (${kgSalen.toLocaleString('es-CL')})`, 'err');
+
+  const s = loadStock();
+  if ((s[origen] || 0) < unidOrig) {
+    return showAlert('t-alert', `Stock insuficiente en origen: hay ${s[origen] || 0} unidades, necesitas ${unidOrig}`, 'err');
+  }
+
+  const perdidaNeta = kgSalen - kgEntran;
+  const movs = loadData();
+  const hora = new Date().toLocaleTimeString('es-CL');
+
+  s[origen] = Math.max(0, (s[origen] || 0) - unidOrig);
+  s[destino] = (s[destino] || 0) + unidDest;
+
+  movs.push({
+    fecha, turno, tipo: 'Transformación',
+    prodId: origen, prodNombre: pOrig.nombre, cliente: pOrig.cliente,
+    kgU: pOrig.kgU, unidades: -unidOrig,
+    totalKg: -(unidOrig * pOrig.kgU),
+    detalle: `→ ${pDest.nombre} ${pDest.cliente} (${unidDest} u) · Pérdida: ${perdidaNeta.toLocaleString('es-CL')} kg · ${motivo || 'Sin motivo'}`,
+    operador: '—', hora
+  });
+  movs.push({
+    fecha, turno, tipo: 'Transformación',
+    prodId: destino, prodNombre: pDest.nombre, cliente: pDest.cliente,
+    kgU: pDest.kgU, unidades: unidDest,
+    totalKg: unidDest * pDest.kgU,
+    detalle: `← desde ${pOrig.nombre} ${pOrig.cliente} (${unidOrig} u) · Pérdida: ${perdidaNeta.toLocaleString('es-CL')} kg · ${motivo || 'Sin motivo'}`,
+    operador: '—', hora
+  });
+
+  saveStock(s); saveData(movs);
+  document.getElementById('t-unid-origen').value = '';
+  document.getElementById('t-unid-destino').value = '';
+  document.getElementById('t-motivo').value = '';
+  document.getElementById('t-resumen').style.display = 'none';
+  showAlert('t-alert', `✓ Transformación registrada | ${kgSalen.toLocaleString('es-CL')} kg → ${kgEntran.toLocaleString('es-CL')} kg | Pérdida: ${perdidaNeta.toLocaleString('es-CL')} kg`, 'ok');
+  renderTransfStock();
+  renderDashboard();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════════════════════════════════
+function renderDashboard() {
+  const s = loadStock();
+  const movs = loadData();
+  const hoy = getToday();
+
+  // KPIs agrupados
+  const kpiData = [
+    { label: 'Bolsa Enesa',     id: 'bolsa-enesa',  cls: 'enesa' },
+    { label: 'Bolsa K-lor',     id: 'bolsa-klor',   cls: 'klor'  },
+    { label: 'Bolsa Ecomas',    id: 'bolsa-ecomas',  cls: 'ecomas'},
+    { label: 'Maxi1000 Gen',    id: 'maxi1000-gen', cls: 'maxi'  },
+    { label: 'Maxi1200 Gen',    id: 'maxi1200-gen', cls: 'maxi'  },
+  ];
+  const kpiGrid = document.getElementById('kpi-grid');
+  kpiGrid.innerHTML = '';
+
+  // Total kg en bodega
+  let totalKg = 0;
+  PRODUCTOS.forEach(p => { totalKg += (s[p.id] || 0) * p.kgU; });
+  const kpiTotal = document.createElement('div');
+  kpiTotal.className = 'kpi';
+  kpiTotal.style.borderColor = 'var(--accent)';
+  kpiTotal.innerHTML = `<div class="kpi-label">Total bodega</div>
+    <div class="kpi-val">${(totalKg/1000).toFixed(1)}</div>
+    <div class="kpi-unit">toneladas</div>`;
+  kpiGrid.appendChild(kpiTotal);
+
+  PRODUCTOS.forEach(p => {
+    const unid = s[p.id] || 0;
+    const cls = unid === 0 ? 'danger' : (unid <= 5 ? 'warn' : '');
+    const div = document.createElement('div');
+    div.className = 'kpi ' + cls;
+    div.innerHTML = `
+      <div class="kpi-label">${p.nombre}<br>${p.cliente}</div>
+      <div class="kpi-val ${unid===0?'stock-zero':unid<=5?'stock-low':''}">${unid}</div>
+      <div class="kpi-unit">unidades · ${(unid*p.kgU).toLocaleString('es-CL')} kg</div>
+    `;
+    kpiGrid.appendChild(div);
+  });
+
+  // Movimientos hoy para resumen
+  const movsHoy = movs.filter(m => m.fecha === hoy);
+  const prodHoy = {}; const despHoy = {}; const mermaHoy = {};
+  movsHoy.forEach(m => {
+    if (m.tipo === 'Producción') prodHoy[m.prodId] = (prodHoy[m.prodId]||0) + m.unidades;
+    if (m.tipo === 'Despacho')   despHoy[m.prodId] = (despHoy[m.prodId]||0) + m.unidades;
+    if (m.tipo === 'Merma')      mermaHoy[m.prodId]= (mermaHoy[m.prodId]||0)+ m.unidades;
+  });
+
+  // Tabla stock detalle
+  const tbody = document.getElementById('stock-tbody');
+  tbody.innerHTML = '';
+  PRODUCTOS.forEach(p => {
+    const unid = s[p.id] || 0;
+    const ph = prodHoy[p.id]||0;
+    const dh = despHoy[p.id]||0;
+    const mh = mermaHoy[p.id]||0;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="tag ${TAG_CLASE[p.cliente]||'tag-gen'}" style="font-size:.7rem">${p.nombre}</span></td>
+      <td><span class="tag ${TAG_CLASE[p.cliente]||'tag-gen'}">${p.cliente}</span></td>
+      <td class="${unid===0?'stock-zero':unid<=5?'stock-low':''}">${unid}</td>
+      <td>${p.kgU.toLocaleString('es-CL')}</td>
+      <td style="font-weight:600">${(unid*p.kgU).toLocaleString('es-CL')}</td>
+      <td class="${ph>0?'num-pos':''}">${ph>0?'+'+ph:'-'}</td>
+      <td class="${dh>0?'num-neg':''}">${dh>0?'-'+dh:'-'}</td>
+      <td class="${mh>0?'num-neg':''}">${mh>0?'-'+mh:'-'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Resumen del día
+  const rtbody = document.getElementById('resumen-tbody');
+  rtbody.innerHTML = '';
+  if (movsHoy.length === 0) {
+    rtbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--dim);padding:2rem;font-family:var(--font-mono)">Sin movimientos hoy</td></tr>';
+  } else {
+    [...movsHoy].reverse().forEach(m => {
+      const tr = document.createElement('tr');
+      tr.className = m.tipo==='Producción'?'sum-row-prod':m.tipo==='Merma'?'sum-row-merma':m.tipo==='Despacho'?'sum-row-venta':'sum-row-transf';
+      tr.innerHTML = `
+        <td><span class="mov-tipo ${TIPO_CLASE[m.tipo]||''}">${m.tipo}</span></td>
+        <td>${m.prodNombre}</td>
+        <td><span class="tag ${TAG_CLASE[m.cliente]||'tag-gen'}">${m.cliente}</span></td>
+        <td style="font-weight:600">${m.unidades > 0 ? '+'+m.unidades : m.unidades}</td>
+        <td style="font-weight:600">${(m.totalKg).toLocaleString('es-CL')}</td>
+        <td>${m.turno}</td>
+        <td style="color:var(--muted)">${m.hora}</td>
+      `;
+      rebody.appendChild(tr);
+    });
+  }
+}
+
+// fix typo
+const rebody = { appendChild: (n) => document.getElementById('resumen-tbody').appendChild(n) };
+
+function renderTransfStock() {
+  const s = loadStock();
+  const div = document.getElementById('t-stock-preview');
+  div.innerHTML = PRODUCTOS.map(p => {
+    const u = s[p.id] || 0;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
+      <span style="font-family:var(--font-mono);font-size:.75rem;color:var(--muted)">${p.nombre} <span class="tag ${TAG_CLASE[p.cliente]||'tag-gen'}" style="font-size:.6rem">${p.cliente}</span></span>
+      <span style="font-family:var(--font-mono);font-size:.85rem;font-weight:600;${u===0?'color:var(--red)':u<=5?'color:var(--yellow)':''}">${u} u</span>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// DEVOLUCIÓN
+// ══════════════════════════════════════════════════════════════════════════
+function toggleDevEstado() {
+  const estado = document.getElementById('dev-estado').value;
+  document.getElementById('dev-repr-panel').style.display = estado === 'Reprocesable' ? 'block' : 'none';
+  calcularDevKgDisp();
+}
+
+function calcularDevKgDisp() {
+  if (document.getElementById('dev-estado').value !== 'Reprocesable') return;
+  const vals = getInputsValues('pdev');
+  let kg = 0;
+  PRODUCTOS.forEach(p => { kg += (vals[p.id] || 0) * p.kgU; });
+  const el = document.getElementById('dev-kg-disp');
+  if (kg === 0) {
+    el.textContent = 'Completa las unidades devueltas para ver los kg disponibles';
+    el.style.color = 'var(--muted)';
+  } else {
+    el.innerHTML = `Kg devueltos disponibles: <strong style="color:var(--cyan)">${kg.toLocaleString('es-CL')} kg</strong>`;
+  }
+  calcularDevReproceso();
+}
+
+function calcularDevReproceso() {
+  const vals = getInputsValues('pdev');
+  let kgSalen = 0;
+  PRODUCTOS.forEach(p => { kgSalen += (vals[p.id] || 0) * p.kgU; });
+  const prodDestId = document.getElementById('dev-repr-prod').value;
+  const unidDest = parseFloat(document.getElementById('dev-repr-unid').value) || 0;
+  const pDest = PRODUCTOS.find(p => p.id === prodDestId);
+  const kgEntran = pDest ? unidDest * pDest.kgU : 0;
+  const perdida = kgSalen - kgEntran;
+  const resDiv = document.getElementById('dev-repr-resumen');
+  if (kgSalen === 0 || unidDest === 0) { resDiv.style.display = 'none'; return; }
+  resDiv.style.display = 'block';
+  if (kgEntran > kgSalen) {
+    resDiv.style.background = 'rgba(239,68,68,.12)'; resDiv.style.border = '1px solid rgba(239,68,68,.3)';
+    resDiv.innerHTML = `<span style="color:var(--red)">⛔ Los kg que entran (${kgEntran.toLocaleString('es-CL')}) no pueden superar los kg devueltos (${kgSalen.toLocaleString('es-CL')})</span>`;
+  } else {
+    const pct = kgSalen > 0 ? ((perdida/kgSalen)*100).toFixed(1) : 0;
+    resDiv.style.background = 'rgba(168,85,247,.08)'; resDiv.style.border = '1px solid rgba(168,85,247,.25)';
+    resDiv.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+      <div><div style="color:var(--cyan);font-size:.65rem">KG DEVUELTOS</div><div style="font-size:.95rem;font-weight:600;color:var(--cyan)">${kgSalen.toLocaleString('es-CL')}</div></div>
+      <div><div style="color:var(--green);font-size:.65rem">KG QUE ENTRAN</div><div style="font-size:.95rem;font-weight:600;color:var(--green)">${kgEntran.toLocaleString('es-CL')}</div></div>
+      <div><div style="color:var(--yellow);font-size:.65rem">PÉRDIDA NETA</div><div style="font-size:.95rem;font-weight:600;color:var(--yellow)">${perdida.toLocaleString('es-CL')} kg <span style="font-size:.65rem">(${pct}%)</span></div></div>
+    </div>`;
+  }
+}
+
+function registrarDevolucion() {
+  const fecha   = document.getElementById('dev-fecha').value;
+  const turno   = document.getElementById('dev-turno').value;
+  const origen  = document.getElementById('dev-origen').value;
+  const guia    = document.getElementById('dev-guia').value.trim();
+  const motivo  = document.getElementById('dev-motivo').value.trim();
+  const estado  = document.getElementById('dev-estado').value;
+  if (!fecha) return showAlert('dev-alert', 'Selecciona la fecha', 'err');
+
+  const vals = getInputsValues('pdev');
+  const totalUnid = Object.values(vals).reduce((a,b)=>a+b, 0);
+  if (totalUnid === 0) return showAlert('dev-alert', 'Ingresa al menos una unidad', 'err');
+
+  let kgDevueltos = 0;
+  PRODUCTOS.forEach(p => { kgDevueltos += (vals[p.id]||0) * p.kgU; });
+
+  // Validar reproceso
+  let reprProd = null, reprUnid = 0, kgEntran = 0;
+  if (estado === 'Reprocesable') {
+    const reprProdId = document.getElementById('dev-repr-prod').value;
+    reprUnid = parseFloat(document.getElementById('dev-repr-unid').value) || 0;
+    reprProd = PRODUCTOS.find(p => p.id === reprProdId);
+    kgEntran = reprProd ? reprUnid * reprProd.kgU : 0;
+    if (reprUnid <= 0) return showAlert('dev-alert', 'Ingresa las unidades del reproceso', 'err');
+    if (kgEntran > kgDevueltos) return showAlert('dev-alert',
+      `Los kg que entran (${kgEntran.toLocaleString('es-CL')}) no pueden superar los kg devueltos (${kgDevueltos.toLocaleString('es-CL')})`, 'err');
+  }
+
+  const s = loadStock();
+  const movs = loadData();
+  const hora = new Date().toLocaleTimeString('es-CL');
+  const perdidaNeta = kgDevueltos - kgEntran;
+  const detBase = `De: ${origen}${guia ? ' · Guía: '+guia : ''} · ${motivo || 'Sin motivo'}`;
+
+  PRODUCTOS.forEach(p => {
+    if (vals[p.id] > 0) {
+      const kgProd = vals[p.id] * p.kgU;
+      // Bueno → suma al stock | Dañado → no suma | Reprocesable → no suma directo (suma el reproceso después)
+      if (estado === 'Bueno') s[p.id] = (s[p.id]||0) + vals[p.id];
+      movs.push({
+        fecha, turno, tipo: 'Devolución',
+        prodId: p.id, prodNombre: p.nombre, cliente: p.cliente,
+        kgU: p.kgU, unidades: vals[p.id],
+        totalKg: kgProd,
+        detalle: `${detBase} · Estado: ${estado}${estado==='Reprocesable'?' → '+reprProd.nombre+' '+reprProd.cliente+' ('+reprUnid+' u) | Pérdida: '+perdidaNeta.toLocaleString('es-CL')+' kg':''}`,
+        operador: '—', hora
+      });
+    }
+  });
+
+  // Si reprocesable → suma el destino
+  if (estado === 'Reprocesable' && reprProd && reprUnid > 0) {
+    s[reprProd.id] = (s[reprProd.id]||0) + reprUnid;
+    movs.push({
+      fecha, turno, tipo: 'Transformación',
+      prodId: reprProd.id, prodNombre: reprProd.nombre, cliente: reprProd.cliente,
+      kgU: reprProd.kgU, unidades: reprUnid, totalKg: kgEntran,
+      detalle: `Reproceso desde devolución · ${origen} · Pérdida neta: ${perdidaNeta.toLocaleString('es-CL')} kg`,
+      operador: '—', hora
+    });
+  }
+
+  saveStock(s); saveData(movs);
+  clearInputs('pdev');
+  document.getElementById('dev-guia').value = '';
+  document.getElementById('dev-motivo').value = '';
+  document.getElementById('dev-estado').value = 'Bueno';
+  document.getElementById('dev-repr-panel').style.display = 'none';
+  document.getElementById('dev-repr-resumen').style.display = 'none';
+  document.getElementById('dev-repr-unid').value = '';
+
+  const msgs = {
+    'Bueno': `✓ Devolución registrada — ${kgDevueltos.toLocaleString('es-CL')} kg ingresados al stock`,
+    'Dañado': `✓ Devolución registrada — ${kgDevueltos.toLocaleString('es-CL')} kg a merma definitiva`,
+    'Reprocesable': `✓ Devolución reprocesada → ${reprProd.nombre} ${reprProd.cliente} (${reprUnid} u) | Pérdida: ${perdidaNeta.toLocaleString('es-CL')} kg`
+  };
+  showAlert('dev-alert', msgs[estado], 'ok');
+  renderDashboard();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// EXPORTAR EXCEL (SheetJS desde CDN)
+// ══════════════════════════════════════════════════════════════════════════
+function exportarExcel() {
+  if (typeof XLSX === 'undefined') {
+    // Cargar SheetJS dinámicamente
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    script.onload = () => _generarExcel();
+    script.onerror = () => alert('No se pudo cargar la librería de Excel. Verifica tu conexión a internet.');
+    document.head.appendChild(script);
+  } else {
+    _generarExcel();
+  }
+}
+
+function _generarExcel() {
+  const movs = loadData();
+  const s = loadStock();
+
+  // Hoja 1: Historial completo
+  const histData = [
+    ['Fecha','Turno','Tipo','Producto','Cliente','Unidades','Total kg','Kg/unidad','Detalle','Operador','Hora']
+  ];
+  movs.forEach(m => {
+    histData.push([m.fecha, m.turno, m.tipo, m.prodNombre, m.cliente,
+      m.unidades, m.totalKg, m.kgU, m.detalle, m.operador, m.hora]);
+  });
+
+  // Hoja 2: Stock actual
+  const stockData = [['Producto','Cliente','Kg/unidad','Unidades en stock','Total kg']];
+  PRODUCTOS.forEach(p => {
+    const u = s[p.id] || 0;
+    stockData.push([p.nombre, p.cliente, p.kgU, u, u * p.kgU]);
+  });
+
+  // Hoja 3: Resumen por tipo
+  const tipos = ['Producción','Merma','Despacho','Devolución','Transformación'];
+  const resData = [['Tipo','Total unidades','Total kg']];
+  tipos.forEach(tipo => {
+    const filtrado = movs.filter(m => m.tipo === tipo);
+    const unid = filtrado.reduce((a,m) => a + Math.abs(m.unidades), 0);
+    const kg   = filtrado.reduce((a,m) => a + Math.abs(m.totalKg), 0);
+    resData.push([tipo, unid, kg]);
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws1 = XLSX.utils.aoa_to_sheet(histData);
+  const ws2 = XLSX.utils.aoa_to_sheet(stockData);
+  const ws3 = XLSX.utils.aoa_to_sheet(resData);
+
+  // Anchos de columna
+  ws1['!cols'] = [10,8,14,16,12,10,12,10,40,14,8].map(w=>({wch:w}));
+  ws2['!cols'] = [16,12,12,16,14].map(w=>({wch:w}));
+  ws3['!cols'] = [18,16,14].map(w=>({wch:w}));
+
+  XLSX.utils.book_append_sheet(wb, ws1, 'Historial');
+  XLSX.utils.book_append_sheet(wb, ws2, 'Stock Actual');
+  XLSX.utils.book_append_sheet(wb, ws3, 'Resumen');
+
+  const fecha = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `Historial_Pellet_${fecha}.xlsx`);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+function renderHistorial() {
+  const movs = loadData();
+  const filtFecha = document.getElementById('h-filtro-fecha').value;
+  const filtTipo  = document.getElementById('h-filtro-tipo').value;
+  let filtered = [...movs].reverse();
+  if (filtFecha) filtered = filtered.filter(m => m.fecha === filtFecha);
+  if (filtTipo)  filtered = filtered.filter(m => m.tipo === filtTipo);
+
+  document.getElementById('h-count').textContent = `${filtered.length} registros`;
+  const tbody = document.getElementById('historial-tbody');
+  tbody.innerHTML = '';
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--dim);padding:2.5rem;font-family:var(--font-mono)">Sin registros</td></tr>';
+    return;
+  }
+
+  filtered.forEach(m => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${m.fecha}</td>
+      <td>${m.turno}</td>
+      <td><span class="mov-tipo ${TIPO_CLASE[m.tipo]||''}">${m.tipo}</span></td>
+      <td>${m.prodNombre}</td>
+      <td><span class="tag ${TAG_CLASE[m.cliente]||'tag-gen'}">${m.cliente}</span></td>
+      <td style="font-weight:600;${m.unidades<0?'color:var(--red)':'color:var(--green)'}">${m.unidades > 0 ? '+'+m.unidades : m.unidades}</td>
+      <td>${m.totalKg.toLocaleString('es-CL')}</td>
+      <td style="color:var(--muted);font-size:.7rem;max-width:200px;white-space:normal">${m.detalle}</td>
+      <td style="color:var(--muted)">${m.operador}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// RESET
+// ══════════════════════════════════════════════════════════════════════════
+function resetAll() {
+  const clave = prompt('⚠ RESET DE DATOS\n\nEsta acción borrará TODO el historial y el stock.\nIngresa la clave de administrador para continuar:');
+  if (clave === null) return; // canceló
+  if (clave !== 'bastianes') {
+    alert('❌ Clave incorrecta. No se realizaron cambios.');
+    return;
+  }
+  if (!confirm('✓ Clave correcta.\n\n¿Confirmas que deseas borrar TODOS los datos?\nEsta acción no se puede deshacer.')) return;
+  localStorage.removeItem('pellet_movs');
+  localStorage.removeItem('pellet_stock');
+  initStock();
+  renderDashboard();
+  alert('✓ Datos reiniciados correctamente.');
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════════════
+(function init() {
+  initStock();
+  const hoy = getToday();
+  ['p','m','d','t'].forEach(p => {
+    const el = document.getElementById(p + '-fecha');
+    if (el) el.value = hoy;
+  });
+  buildProdGrid('prod-grid-prod', 'pp');
+  buildProdGrid('prod-grid-merma','pm');
+  buildProdGrid('prod-grid-despacho','pd');
+  buildProdGrid('prod-grid-dev','pdev');
+  buildTransfSelects();
+
+  // Poblar selects de reproceso (merma y devolución)
+  ['m-repr-prod','dev-repr-prod'].forEach(selId => {
+    const sel = document.getElementById(selId);
+    if (!sel) return;
+    sel.innerHTML = '';
+    PRODUCTOS.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = `${p.nombre} — ${p.cliente} (${p.kgU} kg/u)`;
+      sel.appendChild(opt);
+    });
+  });
+
+  // Conectar inputs de merma y devolución al cálculo dinámico
+  setTimeout(() => {
+    PRODUCTOS.forEach(p => {
+      const em = document.getElementById('pm-' + p.id);
+      if (em) em.addEventListener('input', calcularKgDisponibles);
+      const ed = document.getElementById('pdev-' + p.id);
+      if (ed) ed.addEventListener('input', calcularDevKgDisp);
+    });
+  }, 100);
+  renderDashboard();
+})();
+</script>
+</body>
+</html>
