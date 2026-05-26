@@ -626,6 +626,64 @@ table.log tr.row-sel td { background: rgba(59,130,246,.08); }
 .sum-row-transf td:first-child { border-left: 3px solid var(--purple); }
 .stock-low { color: var(--yellow) !important; font-weight: 600; }
 .stock-zero { color: var(--red) !important; font-weight: 700; }
+
+/* ══ RESPONSIVE TABLET / MOBILE ══ */
+@media (max-width: 768px) {
+  html { font-size: 14px; }
+
+  .topbar { padding: 0 .75rem; height: 48px; }
+  .logo { font-size: .95rem; }
+  #clock { display: none; }
+  .btn-reset { font-size: .72rem; padding: 4px 8px; }
+
+  .nav { padding: 0 .5rem; overflow-x: auto; gap: 0; }
+  .nav-tab { font-size: .75rem; padding: 8px 10px; white-space: nowrap; }
+
+  .main { padding: .75rem; }
+
+  .form-layout { grid-template-columns: 1fr !important; gap: .75rem; }
+  .form-row { grid-template-columns: 1fr !important; }
+  .form-row.triple { grid-template-columns: 1fr !important; }
+
+  .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px; }
+  .kpi-val { font-size: 1.3rem; }
+
+  .stock-wrap { overflow-x: auto; }
+  table.stock th, table.stock td { padding: 6px 8px; font-size: .72rem; }
+  table.log th, table.log td { padding: 6px 8px; font-size: .7rem; }
+
+  .acord-titulo { font-size: .82rem; }
+  .acord-cliente-input { width: 70px; font-size: .85rem; }
+  .acord-cliente-label { min-width: 70px; font-size: .72rem; }
+
+  .h-filtros-row { flex-direction: column; gap: 8px; }
+  .h-filtro-group { width: 100%; }
+  .h-filtro-input { width: 100%; }
+
+  .btn-submit { font-size: .85rem; padding: 11px 16px; }
+
+  /* Topbar en mobile: stack botones */
+  .topbar-right { gap: .5rem; }
+  .topbar-right .btn-reset:first-of-type { display: none; } /* ocultar revertir en mobile, solo reset */
+}
+
+@media (max-width: 480px) {
+  .kpi-grid { grid-template-columns: 1fr 1fr !important; }
+  .kpi { padding: 10px; }
+  .kpi-val { font-size: 1.15rem; }
+  .kpi-label { font-size: .6rem; }
+
+  .nav-tab { font-size: .68rem; padding: 8px 7px; }
+  .logo { font-size: .85rem; }
+  .badge-live { display: none; }
+
+  /* Tabla stock: ocultar columnas menos importantes en pantalla muy pequeña */
+  table.stock th:nth-child(4),
+  table.stock td:nth-child(4) { display: none; }
+
+  .h-chips { gap: 4px; }
+  .h-chip { font-size: .62rem; padding: 3px 8px; }
+}
 </style>
 </head>
 <body>
@@ -796,8 +854,8 @@ table.log tr.row-sel td { background: rgba(59,130,246,.08); }
 
     <div class="form-panel">
       <div class="form-panel-title">▶ Unidades rechazadas por producto</div>
-      <div class="prod-grid" id="prod-grid-merma"></div>
-      <button class="btn-submit red" onclick="registrarMerma()">Registrar merma</button>
+      <div id="merma-acordeon"></div>
+      <button class="btn-submit red" onclick="registrarMerma()" style="margin-top:12px">Registrar merma</button>
       <div id="m-alert" class="alert"></div>
     </div>
   </div>
@@ -846,8 +904,8 @@ table.log tr.row-sel td { background: rgba(59,130,246,.08); }
 
     <div class="form-panel">
       <div class="form-panel-title">▶ Unidades despachadas por producto</div>
-      <div class="prod-grid" id="prod-grid-despacho"></div>
-      <button class="btn-submit" onclick="registrarDespacho()">Registrar despacho</button>
+      <div id="despacho-acordeon"></div>
+      <button class="btn-submit" onclick="registrarDespacho()" style="margin-top:12px">Registrar despacho</button>
       <div id="d-alert" class="alert"></div>
     </div>
   </div>
@@ -874,7 +932,7 @@ table.log tr.row-sel td { background: rgba(59,130,246,.08); }
       <div class="form-row full">
         <div class="form-group">
           <label>Producto ORIGEN (sale del stock)</label>
-          <select id="t-origen" onchange="calcularResumenTransf()"></select>
+          <select id="t-origen" onchange="calcularResumenTransf()" style="background:var(--bg);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-family:var(--font-mono);font-size:.8rem;padding:8px 10px;width:100%;outline:none"></select>
         </div>
       </div>
       <div class="form-row full">
@@ -883,13 +941,12 @@ table.log tr.row-sel td { background: rgba(59,130,246,.08); }
           <input type="number" id="t-unid-origen" min="0" step="1" placeholder="0" oninput="calcularResumenTransf()">
         </div>
       </div>
-      <div class="form-row full">
-        <div class="form-group">
-          <label>Producto DESTINO (entra al stock)</label>
-          <select id="t-destino" onchange="calcularResumenTransf()"></select>
-        </div>
-      </div>
-      <div class="form-row full">
+
+      <!-- Acordeón destino transformación -->
+      <div style="margin:8px 0 4px;font-family:var(--font-mono);font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Producto DESTINO (entra al stock)</div>
+      <div id="transf-destino-acordeon"></div>
+
+      <div class="form-row full" style="margin-top:8px">
         <div class="form-group">
           <label>Unidades que entran al destino</label>
           <input type="number" id="t-unid-destino" min="0" step="1" placeholder="0" oninput="calcularResumenTransf()">
@@ -985,8 +1042,8 @@ table.log tr.row-sel td { background: rgba(59,130,246,.08); }
 
     <div class="form-panel">
       <div class="form-panel-title">▶ Unidades devueltas por producto</div>
-      <div class="prod-grid" id="prod-grid-dev"></div>
-      <button class="btn-submit" style="background:#0891b2" onclick="registrarDevolucion()">Registrar devolución</button>
+      <div id="dev-acordeon"></div>
+      <button class="btn-submit" style="background:#0891b2;margin-top:12px" onclick="registrarDevolucion()">Registrar devolución</button>
       <div id="dev-alert" class="alert"></div>
     </div>
   </div>
@@ -1240,7 +1297,279 @@ function clearProdInputs() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// PROD GRIDS — merma / despacho / devolución (sin cambio)
+// ACORDEÓN MERMA (mismo estilo que producción)
+// ══════════════════════════════════════════════════════════════════════════
+const GRUPOS_MERMA = [
+  { id:'m-bolsas', titulo:'Bolsas 15 kg', colorVar:'--red',
+    clientes:[
+      {id:'bolsa-enesa',  label:'Enesa',   color:'var(--enesa)',  kgU:15},
+      {id:'bolsa-klor',   label:'K-lor',   color:'var(--klor)',   kgU:15},
+      {id:'bolsa-ecomas', label:'Ecomas',  color:'var(--ecomas)', kgU:15},
+    ]},
+  { id:'m-maxi1000', titulo:'Maxisaco 1.000 kg', colorVar:'--red',
+    clientes:[
+      {id:'maxi1000-gen', label:'Genérico', color:'var(--maxi)',   kgU:1000},
+      {id:'maxi1000-ene', label:'Enesa',    color:'var(--enesa)',  kgU:1000},
+      {id:'maxi1000-klo', label:'K-lor',    color:'var(--klor)',   kgU:1000},
+      {id:'maxi1000-eco', label:'Ecomas',   color:'var(--ecomas)', kgU:1000},
+    ]},
+  { id:'m-maxi1200', titulo:'Maxisaco 1.200 kg', colorVar:'--red',
+    clientes:[
+      {id:'maxi1200-gen', label:'Genérico', color:'var(--maxi)',   kgU:1200},
+      {id:'maxi1200-ene', label:'Enesa',    color:'var(--enesa)',  kgU:1200},
+      {id:'maxi1200-klo', label:'K-lor',    color:'var(--klor)',   kgU:1200},
+      {id:'maxi1200-eco', label:'Ecomas',   color:'var(--ecomas)', kgU:1200},
+    ]},
+];
+
+function buildAcordeonMerma() {
+  const cont = document.getElementById('merma-acordeon');
+  if (!cont) return;
+  cont.innerHTML = '';
+  GRUPOS_MERMA.forEach(g => {
+    const div = document.createElement('div');
+    div.className = 'acord-grupo';
+    div.innerHTML = `
+      <div class="acord-header" onclick="toggleAcord('${g.id}')">
+        <div class="acord-header-left">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(${g.colorVar})"></span>
+          <span class="acord-titulo">${g.titulo}</span>
+          <span class="acord-subtotal" id="subtotal-${g.id}">— kg</span>
+        </div>
+        <span class="acord-chevron" id="chev-${g.id}">▼</span>
+      </div>
+      <div class="acord-body" id="body-${g.id}">
+        <div class="acord-clientes">
+          ${g.clientes.map(c=>`
+            <div class="acord-cliente-row">
+              <span class="acord-cliente-label" style="color:${c.color}">${c.label}</span>
+              <input type="number" class="acord-cliente-input" id="pm-${c.id}"
+                min="0" step="1" placeholder="0"
+                oninput="actualizarSubtotalMerma('${g.id}');calcularKgDisponibles()">
+              <span class="acord-cliente-kg" id="mkg-${c.id}">0 kg</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+    cont.appendChild(div);
+  });
+}
+
+function actualizarSubtotalMerma(grupoId) {
+  const g = GRUPOS_MERMA.find(x=>x.id===grupoId);
+  if (!g) return;
+  let totalKg = 0;
+  g.clientes.forEach(c => {
+    const u = parseFloat(document.getElementById('pm-'+c.id)?.value)||0;
+    const kg = u*c.kgU; totalKg += kg;
+    const el = document.getElementById('mkg-'+c.id);
+    if (el) el.textContent = kg>0 ? kg.toLocaleString('es-CL')+' kg' : '0 kg';
+  });
+  const sub = document.getElementById('subtotal-'+grupoId);
+  if (sub) sub.textContent = totalKg>0 ? '→ '+totalKg.toLocaleString('es-CL')+' kg' : '— kg';
+}
+
+function getMermaValues() {
+  const vals = {};
+  GRUPOS_MERMA.forEach(g=>g.clientes.forEach(c=>{
+    vals[c.id] = parseFloat(document.getElementById('pm-'+c.id)?.value)||0;
+  }));
+  return vals;
+}
+
+function clearMermaInputs() {
+  GRUPOS_MERMA.forEach(g=>{
+    g.clientes.forEach(c=>{
+      const el=document.getElementById('pm-'+c.id); if(el) el.value='';
+      const kgEl=document.getElementById('mkg-'+c.id); if(kgEl) kgEl.textContent='0 kg';
+    });
+    const sub=document.getElementById('subtotal-'+g.id); if(sub) sub.textContent='— kg';
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ACORDEÓN GENÉRICO — despacho y devolución
+// ══════════════════════════════════════════════════════════════════════════
+const GRUPOS_BASE = [
+  { id:'bolsas', titulo:'Bolsas 15 kg', colorVar:'--accent',
+    clientes:[
+      {id:'bolsa-enesa',  label:'Enesa',   color:'var(--enesa)',  kgU:15},
+      {id:'bolsa-klor',   label:'K-lor',   color:'var(--klor)',   kgU:15},
+      {id:'bolsa-ecomas', label:'Ecomas',  color:'var(--ecomas)', kgU:15},
+    ]},
+  { id:'maxi1000', titulo:'Maxisaco 1.000 kg', colorVar:'--purple',
+    clientes:[
+      {id:'maxi1000-gen', label:'Genérico', color:'var(--maxi)',   kgU:1000},
+      {id:'maxi1000-ene', label:'Enesa',    color:'var(--enesa)',  kgU:1000},
+      {id:'maxi1000-klo', label:'K-lor',    color:'var(--klor)',   kgU:1000},
+      {id:'maxi1000-eco', label:'Ecomas',   color:'var(--ecomas)', kgU:1000},
+    ]},
+  { id:'maxi1200', titulo:'Maxisaco 1.200 kg', colorVar:'--purple',
+    clientes:[
+      {id:'maxi1200-gen', label:'Genérico', color:'var(--maxi)',   kgU:1200},
+      {id:'maxi1200-ene', label:'Enesa',    color:'var(--enesa)',  kgU:1200},
+      {id:'maxi1200-klo', label:'K-lor',    color:'var(--klor)',   kgU:1200},
+      {id:'maxi1200-eco', label:'Ecomas',   color:'var(--ecomas)', kgU:1200},
+    ]},
+];
+
+function buildAcordeonGenerico(containerId, prefix) {
+  const cont = document.getElementById(containerId);
+  if (!cont) return;
+  cont.innerHTML = '';
+  GRUPOS_BASE.forEach(g => {
+    const div = document.createElement('div');
+    div.className = 'acord-grupo';
+    div.innerHTML = `
+      <div class="acord-header" onclick="toggleAcordGen('${prefix}','${g.id}')">
+        <div class="acord-header-left">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(${g.colorVar})"></span>
+          <span class="acord-titulo">${g.titulo}</span>
+          <span class="acord-subtotal" id="${prefix}-sub-${g.id}">— kg</span>
+        </div>
+        <span class="acord-chevron" id="${prefix}-chev-${g.id}">▼</span>
+      </div>
+      <div class="acord-body" id="${prefix}-body-${g.id}">
+        <div class="acord-clientes">
+          ${g.clientes.map(c=>`
+            <div class="acord-cliente-row">
+              <span class="acord-cliente-label" style="color:${c.color}">${c.label}</span>
+              <input type="number" class="acord-cliente-input" id="${prefix}-${c.id}"
+                min="0" step="1" placeholder="0"
+                oninput="actualizarSubtotalGen('${prefix}','${g.id}')">
+              <span class="acord-cliente-kg" id="${prefix}-kg-${c.id}">0 kg</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+    cont.appendChild(div);
+  });
+}
+
+function toggleAcordGen(prefix, grupoId) {
+  const body = document.getElementById(prefix+'-body-'+grupoId);
+  const chev = document.getElementById(prefix+'-chev-'+grupoId);
+  if (!body) return;
+  const open = body.classList.toggle('open');
+  chev.classList.toggle('open', open);
+}
+
+function actualizarSubtotalGen(prefix, grupoId) {
+  const g = GRUPOS_BASE.find(x=>x.id===grupoId);
+  if (!g) return;
+  let totalKg = 0;
+  g.clientes.forEach(c => {
+    const u = parseFloat(document.getElementById(prefix+'-'+c.id)?.value)||0;
+    const kg = u*c.kgU; totalKg += kg;
+    const el = document.getElementById(prefix+'-kg-'+c.id);
+    if (el) el.textContent = kg>0 ? kg.toLocaleString('es-CL')+' kg' : '0 kg';
+  });
+  const sub = document.getElementById(prefix+'-sub-'+grupoId);
+  if (sub) sub.textContent = totalKg>0 ? '→ '+totalKg.toLocaleString('es-CL')+' kg' : '— kg';
+}
+
+function getGenValues(prefix) {
+  const vals = {};
+  GRUPOS_BASE.forEach(g=>g.clientes.forEach(c=>{
+    vals[c.id] = parseFloat(document.getElementById(prefix+'-'+c.id)?.value)||0;
+  }));
+  return vals;
+}
+
+function clearGenInputs(prefix) {
+  GRUPOS_BASE.forEach(g=>{
+    g.clientes.forEach(c=>{
+      const el=document.getElementById(prefix+'-'+c.id); if(el) el.value='';
+      const kgEl=document.getElementById(prefix+'-kg-'+c.id); if(kgEl) kgEl.textContent='0 kg';
+    });
+    const sub=document.getElementById(prefix+'-sub-'+g.id); if(sub) sub.textContent='— kg';
+  });
+}
+
+// ── Selector visual de destino para transformación ─────────────────────
+function buildTransfDestinoAcordeon() {
+  const cont = document.getElementById('transf-destino-acordeon');
+  if (!cont) return;
+
+  // Grupos igual que producción pero para seleccionar destino
+  const grupos = [
+    { id:'td-bolsas', titulo:'Bolsas 15 kg', colorVar:'--purple',
+      items:[
+        {id:'bolsa-enesa',  label:'Enesa',   color:'var(--enesa)'},
+        {id:'bolsa-klor',   label:'K-lor',   color:'var(--klor)'},
+        {id:'bolsa-ecomas', label:'Ecomas',  color:'var(--ecomas)'},
+      ]},
+    { id:'td-maxi1000', titulo:'Maxisaco 1.000 kg', colorVar:'--purple',
+      items:[
+        {id:'maxi1000-gen', label:'Genérico', color:'var(--maxi)'},
+        {id:'maxi1000-ene', label:'Enesa',    color:'var(--enesa)'},
+        {id:'maxi1000-klo', label:'K-lor',    color:'var(--klor)'},
+        {id:'maxi1000-eco', label:'Ecomas',   color:'var(--ecomas)'},
+      ]},
+    { id:'td-maxi1200', titulo:'Maxisaco 1.200 kg', colorVar:'--purple',
+      items:[
+        {id:'maxi1200-gen', label:'Genérico', color:'var(--maxi)'},
+        {id:'maxi1200-ene', label:'Enesa',    color:'var(--enesa)'},
+        {id:'maxi1200-klo', label:'K-lor',    color:'var(--klor)'},
+        {id:'maxi1200-eco', label:'Ecomas',   color:'var(--ecomas)'},
+      ]},
+  ];
+
+  cont.innerHTML = '';
+  grupos.forEach(g => {
+    const div = document.createElement('div');
+    div.className = 'acord-grupo';
+    div.innerHTML = `
+      <div class="acord-header" onclick="toggleAcord('${g.id}')">
+        <div class="acord-header-left">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(${g.colorVar})"></span>
+          <span class="acord-titulo">${g.titulo}</span>
+          <span class="acord-subtotal" id="subtotal-${g.id}" style="color:var(--purple)"></span>
+        </div>
+        <span class="acord-chevron" id="chev-${g.id}">▼</span>
+      </div>
+      <div class="acord-body" id="body-${g.id}">
+        <div class="acord-clientes">
+          ${g.items.map(item=>`
+            <div class="acord-cliente-row" style="cursor:pointer" onclick="seleccionarDestTransf('${item.id}','${item.label}','${g.titulo}')">
+              <span class="acord-cliente-label" style="color:${item.color}">${item.label}</span>
+              <span id="td-sel-${item.id}" style="font-family:var(--font-mono);font-size:.68rem;color:var(--dim)"></span>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+    cont.appendChild(div);
+  });
+
+  // Sincronizar con el select oculto t-destino
+  buildTransfSelects();
+}
+
+function seleccionarDestTransf(prodId, label, grupo) {
+  // Marcar seleccionado visualmente
+  document.querySelectorAll('[id^="td-sel-"]').forEach(el => el.textContent='');
+  const sel = document.getElementById('td-sel-'+prodId);
+  if (sel) sel.textContent = '✓ seleccionado';
+
+  // Actualizar label del grupo
+  document.querySelectorAll('[id^="subtotal-td-"]').forEach(el => el.textContent='');
+  const p = PRODUCTOS.find(x=>x.id===prodId);
+  if (p) {
+    // Encontrar el grupo correcto
+    ['td-bolsas','td-maxi1000','td-maxi1200'].forEach(gid => {
+      const sub = document.getElementById('subtotal-'+gid);
+      if (sub) sub.textContent = '';
+    });
+  }
+
+  // Sync al select real
+  const selectOrig = document.getElementById('t-destino');
+  if (selectOrig) selectOrig.value = prodId;
+  calcularResumenTransf();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// SELECTS DE TRANSFORMACIÓN (origen mantiene select, destino usa acordeón)
 // ══════════════════════════════════════════════════════════════════════════
 function buildProdGrid(containerId, prefix) {
   const c = document.getElementById(containerId);
@@ -1277,15 +1606,30 @@ function clearInputs(prefix) {
 // SELECTS DE TRANSFORMACIÓN
 // ══════════════════════════════════════════════════════════════════════════
 function buildTransfSelects() {
-  ['t-origen','t-destino'].forEach(id => {
-    const sel = document.getElementById(id);
-    sel.innerHTML = '';
-    PRODUCTOS.forEach(p => {
-      const opt = document.createElement('option');
-      opt.value = p.id;
-      opt.textContent = `${p.nombre} — ${p.cliente} (${p.kgU} kg/u)`;
-      sel.appendChild(opt);
-    });
+  // Solo origen como select — destino usa acordeón visual
+  const sel = document.getElementById('t-origen');
+  if (!sel) return;
+  sel.innerHTML = '';
+  PRODUCTOS.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = `${p.nombre} — ${p.cliente} (${p.kgU} kg/u)`;
+    sel.appendChild(opt);
+  });
+  // Select oculto para destino (lo usa el acordeón internamente)
+  let selDest = document.getElementById('t-destino');
+  if (!selDest) {
+    selDest = document.createElement('select');
+    selDest.id = 't-destino';
+    selDest.style.display = 'none';
+    document.body.appendChild(selDest);
+  }
+  selDest.innerHTML = '';
+  PRODUCTOS.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.nombre + ' — ' + p.cliente;
+    selDest.appendChild(opt);
   });
 }
 
@@ -1340,7 +1684,7 @@ function toggleReproceso() {
 // Recalcular kg disponibles cada vez que cambia algún input de merma
 function calcularKgDisponibles() {
   if (document.getElementById('m-reproceso').value !== 'Sí') return;
-  const vals = getInputsValues('pm');
+  const vals = getMermaValues();
   let kgTotal = 0;
   PRODUCTOS.forEach(p => { kgTotal += (vals[p.id] || 0) * p.kgU; });
   const el = document.getElementById('m-kg-disp');
@@ -1356,7 +1700,7 @@ function calcularKgDisponibles() {
 
 // Calcular resumen kg salen vs entran vs pérdida
 function calcularReproceso() {
-  const vals = getInputsValues('pm');
+  const vals = getMermaValues();
   let kgSalen = 0;
   PRODUCTOS.forEach(p => { kgSalen += (vals[p.id] || 0) * p.kgU; });
 
@@ -1395,22 +1739,19 @@ function registrarMerma() {
   const reproceso = document.getElementById('m-reproceso').value;
   if (!fecha) return showAlert('m-alert', 'Selecciona la fecha', 'err');
 
-  const vals = getInputsValues('pm');
+  const vals = getMermaValues();
   const total = Object.values(vals).reduce((a,b)=>a+b,0);
   if (total === 0) return showAlert('m-alert', 'Ingresa al menos una unidad', 'err');
 
-  // Calcular kg totales rechazados
   let kgSalen = 0;
   PRODUCTOS.forEach(p => { kgSalen += (vals[p.id] || 0) * p.kgU; });
 
-  // Validar reproceso si aplica
   let reprProd = null, reprUnid = 0, kgEntran = 0;
   if (reproceso === 'Sí') {
     const reprProdId = document.getElementById('m-repr-prod').value;
     reprUnid = parseFloat(document.getElementById('m-repr-unid').value) || 0;
     reprProd = PRODUCTOS.find(p => p.id === reprProdId);
     kgEntran = reprProd ? reprUnid * reprProd.kgU : 0;
-
     if (reprUnid <= 0) return showAlert('m-alert', 'Ingresa las unidades del reproceso', 'err');
     if (kgEntran > kgSalen) return showAlert('m-alert',
       `Los kg que entran (${kgEntran.toLocaleString('es-CL')}) no pueden superar los kg rechazados (${kgSalen.toLocaleString('es-CL')})`, 'err');
@@ -1421,36 +1762,32 @@ function registrarMerma() {
   const hora = new Date().toLocaleTimeString('es-CL');
   const perdidaNeta = kgSalen - kgEntran;
 
-  // 1. Registrar merma (resta del stock)
   PRODUCTOS.forEach(p => {
     if (vals[p.id] > 0) {
       s[p.id] = Math.max(0, (s[p.id] || 0) - vals[p.id]);
       movs.push({
         fecha, turno, tipo: 'Merma',
         prodId: p.id, prodNombre: p.nombre, cliente: p.cliente,
-        kgU: p.kgU, unidades: vals[p.id],
-        totalKg: vals[p.id] * p.kgU,
+        kgU: p.kgU, unidades: vals[p.id], totalKg: vals[p.id] * p.kgU,
         detalle: `${motivo || 'Sin motivo'} · ${reproceso === 'Sí' ? `Reprocesa → ${reprProd.nombre} ${reprProd.cliente} | Pérdida neta: ${perdidaNeta.toLocaleString('es-CL')} kg` : 'Merma definitiva'}`,
         operador: '—', hora
       });
     }
   });
 
-  // 2. Si hay reproceso, registrar la transformación de entrada
   if (reproceso === 'Sí' && reprProd && reprUnid > 0) {
     s[reprProd.id] = (s[reprProd.id] || 0) + reprUnid;
     movs.push({
       fecha, turno, tipo: 'Transformación',
       prodId: reprProd.id, prodNombre: reprProd.nombre, cliente: reprProd.cliente,
-      kgU: reprProd.kgU, unidades: reprUnid,
-      totalKg: kgEntran,
+      kgU: reprProd.kgU, unidades: reprUnid, totalKg: kgEntran,
       detalle: `Reproceso desde merma · ${motivo || 'Sin motivo'} · Pérdida neta: ${perdidaNeta.toLocaleString('es-CL')} kg`,
       operador: '—', hora
     });
   }
 
   saveStock(s); saveData(movs);
-  clearInputs('pm');
+  clearMermaInputs();
   document.getElementById('m-motivo').value = '';
   document.getElementById('m-reproceso').value = 'No';
   document.getElementById('m-repr-unid').value = '';
@@ -1473,7 +1810,7 @@ function registrarDespacho() {
   if (!fecha) return showAlert('d-alert', 'Selecciona la fecha', 'err');
   if (!guia) return showAlert('d-alert', 'Ingresa el número de guía', 'err');
 
-  const vals = getInputsValues('pd');
+  const vals = getGenValues('d');
   const total = Object.values(vals).reduce((a,b)=>a+b,0);
   if (total === 0) return showAlert('d-alert', 'Ingresa al menos una unidad', 'err');
 
@@ -1483,14 +1820,14 @@ function registrarDespacho() {
 
   let error = null;
   PRODUCTOS.forEach(p => {
-    if (vals[p.id] > 0 && (s[p.id] || 0) < vals[p.id]) {
+    if ((vals[p.id]||0) > 0 && (s[p.id] || 0) < vals[p.id]) {
       error = `Stock insuficiente: ${p.nombre} ${p.cliente} — stock: ${s[p.id] || 0}, pedido: ${vals[p.id]}`;
     }
   });
   if (error) return showAlert('d-alert', error, 'err');
 
   PRODUCTOS.forEach(p => {
-    if (vals[p.id] > 0) {
+    if ((vals[p.id]||0) > 0) {
       s[p.id] = Math.max(0, (s[p.id] || 0) - vals[p.id]);
       movs.push({
         fecha, turno, tipo: 'Despacho',
@@ -1504,7 +1841,7 @@ function registrarDespacho() {
   });
 
   saveStock(s); saveData(movs);
-  clearInputs('pd');
+  clearGenInputs('d');
   document.getElementById('d-guia').value = '';
   document.getElementById('d-obs').value = '';
   showAlert('d-alert', `✓ Despacho registrado — Guía ${guia}`, 'ok');
@@ -1730,7 +2067,7 @@ function toggleDevEstado() {
 
 function calcularDevKgDisp() {
   if (document.getElementById('dev-estado').value !== 'Reprocesable') return;
-  const vals = getInputsValues('pdev');
+  const vals = getGenValues('dev');
   let kg = 0;
   PRODUCTOS.forEach(p => { kg += (vals[p.id] || 0) * p.kgU; });
   const el = document.getElementById('dev-kg-disp');
@@ -1744,7 +2081,7 @@ function calcularDevKgDisp() {
 }
 
 function calcularDevReproceso() {
-  const vals = getInputsValues('pdev');
+  const vals = getGenValues('dev');
   let kgSalen = 0;
   PRODUCTOS.forEach(p => { kgSalen += (vals[p.id] || 0) * p.kgU; });
   const prodDestId = document.getElementById('dev-repr-prod').value;
@@ -1778,7 +2115,7 @@ function registrarDevolucion() {
   const estado  = document.getElementById('dev-estado').value;
   if (!fecha) return showAlert('dev-alert', 'Selecciona la fecha', 'err');
 
-  const vals = getInputsValues('pdev');
+  const vals = getGenValues('dev');
   const totalUnid = Object.values(vals).reduce((a,b)=>a+b, 0);
   if (totalUnid === 0) return showAlert('dev-alert', 'Ingresa al menos una unidad', 'err');
 
@@ -1804,9 +2141,8 @@ function registrarDevolucion() {
   const detBase = `De: ${origen}${guia ? ' · Guía: '+guia : ''} · ${motivo || 'Sin motivo'}`;
 
   PRODUCTOS.forEach(p => {
-    if (vals[p.id] > 0) {
+    if ((vals[p.id]||0) > 0) {
       const kgProd = vals[p.id] * p.kgU;
-      // Bueno → suma al stock | Dañado → no suma | Reprocesable → no suma directo (suma el reproceso después)
       if (estado === 'Bueno') s[p.id] = (s[p.id]||0) + vals[p.id];
       movs.push({
         fecha, turno, tipo: 'Devolución',
@@ -1819,7 +2155,6 @@ function registrarDevolucion() {
     }
   });
 
-  // Si reprocesable → suma el destino
   if (estado === 'Reprocesable' && reprProd && reprUnid > 0) {
     s[reprProd.id] = (s[reprProd.id]||0) + reprUnid;
     movs.push({
@@ -1832,7 +2167,7 @@ function registrarDevolucion() {
   }
 
   saveStock(s); saveData(movs);
-  clearInputs('pdev');
+  clearGenInputs('dev');
   document.getElementById('dev-guia').value = '';
   document.getElementById('dev-motivo').value = '';
   document.getElementById('dev-estado').value = 'Bueno';
@@ -2121,10 +2456,11 @@ function resetAll() {
     if (el) el.value = hoy;
   });
   buildAcordeonProduccion();
-  buildProdGrid('prod-grid-merma','pm');
-  buildProdGrid('prod-grid-despacho','pd');
-  buildProdGrid('prod-grid-dev','pdev');
+  buildAcordeonMerma();
+  buildAcordeonGenerico('despacho-acordeon', 'd');
+  buildAcordeonGenerico('dev-acordeon', 'dev');
   buildTransfSelects();
+  buildTransfDestinoAcordeon();
 
   ['m-repr-prod','dev-repr-prod'].forEach(selId => {
     const sel = document.getElementById(selId);
