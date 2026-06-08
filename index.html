@@ -485,12 +485,6 @@ table.data tr.row-rech td { background:#fef2f2;opacity:.7; }
         <div class="nav-item" id="nav-merma" onclick="showPage('merma')">
           <span class="nav-icon">⚠️</span> Merma
         </div>
-        <div class="nav-item" id="nav-despacho" onclick="showPage('despacho')">
-          <span class="nav-icon">🚚</span> Despacho
-        </div>
-        <div class="nav-item" id="nav-devolucion" onclick="showPage('devolucion')">
-          <span class="nav-icon">↩️</span> Devolución
-        </div>
         <div class="nav-item" id="nav-transformacion" onclick="showPage('transformacion')">
           <span class="nav-icon">🔄</span> Transformación
         </div>
@@ -502,6 +496,10 @@ table.data tr.row-rech td { background:#fef2f2;opacity:.7; }
           <span class="nav-icon">✅</span> Aprobaciones
           <span class="nav-badge" id="nav-pend-count" style="display:none">0</span>
         </div>
+        <div class="sidebar-section-label" style="margin-top:.5rem">Registrar</div>
+        <div class="nav-item" id="nav-devolucion-s" onclick="showPage('devolucion')">
+          <span class="nav-icon">↩️</span> Devolución
+        </div>
       </div>
 
       <div class="sidebar-section" id="nav-section-maestro" style="display:none">
@@ -510,7 +508,17 @@ table.data tr.row-rech td { background:#fef2f2;opacity:.7; }
           <span class="nav-icon">✅</span> Aprobaciones
           <span class="nav-badge" id="nav-pend-count-m" style="display:none">0</span>
         </div>
+        <div class="sidebar-section-label" style="margin-top:.5rem">Registrar</div>
+        <div class="nav-item" id="nav-despacho-m" onclick="showPage('despacho')">
+          <span class="nav-icon">🚚</span> Despacho
+        </div>
+        <div class="nav-item" id="nav-devolucion-m" onclick="showPage('devolucion')">
+          <span class="nav-icon">↩️</span> Devolución
+        </div>
         <div class="sidebar-section-label" style="margin-top:.5rem">Administración</div>
+        <div class="nav-item" id="nav-stock-inicial" onclick="showPage('stock-inicial')">
+          <span class="nav-icon">📦</span> Stock inicial
+        </div>
         <div class="nav-item" id="nav-admin" onclick="showPage('admin')">
           <span class="nav-icon">🛠️</span> Admin. datos
         </div>
@@ -872,6 +880,30 @@ table.data tr.row-rech td { background:#fef2f2;opacity:.7; }
         </div>
       </div>
 
+      <!-- ══ STOCK INICIAL (MAESTRO) ══ -->
+      <div class="page" id="page-stock-inicial">
+        <div class="page-header">
+          <div class="page-title">📦 Stock inicial</div>
+          <div class="page-sub">Define el stock de partida para cada producto. Solo disponible para el Maestro.</div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="card-title-icon">⚠️</span> Importante</div>
+          <p style="font-size:.85rem;color:var(--muted);margin-bottom:0">Este stock se suma al stock actual. Úsalo solo al configurar el sistema por primera vez o después de un reset. Si quieres partir de cero, usa primero "Admin. datos → Reset completo".</p>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title"><span class="card-title-icon">📦</span> Pallets y bolsas</div>
+            <div id="si-pallets"></div>
+          </div>
+          <div class="card">
+            <div class="card-title"><span class="card-title-icon">🎒</span> Maxisacos</div>
+            <div id="si-maxis"></div>
+          </div>
+        </div>
+        <button class="btn btn-teal" onclick="guardarStockInicial()" style="margin-top:.5rem">💾 Guardar stock inicial</button>
+        <div id="si-alert" class="alert" style="margin-top:.75rem"></div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -951,16 +983,26 @@ function initApp() {
 // NAVEGACIÓN
 // ══════════════════════════════════════════════════════════════════════════
 function showPage(id) {
+  // Validar permisos por rol
+  if(id==='despacho'      && !['maestro'].includes(currentUser?.rol)) return;
+  if(id==='devolucion'    && !['supervisor','maestro'].includes(currentUser?.rol)) return;
+  if(id==='admin'         && currentUser?.rol !== 'maestro') return;
+  if(id==='stock-inicial' && currentUser?.rol !== 'maestro') return;
+
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id)?.classList.add('active');
-  document.getElementById('nav-'+id)?.classList.add('active');
+  // Múltiples IDs de nav posibles para la misma página
+  ['nav-'+id,'nav-'+id+'-s','nav-'+id+'-m'].forEach(nid=>{
+    document.getElementById(nid)?.classList.add('active');
+  });
   closeSidebar();
-  if(id==='dashboard') renderDashboard();
-  if(id==='historial') renderHistorial();
+  if(id==='dashboard')      renderDashboard();
+  if(id==='historial')      renderHistorial();
   if(id==='transformacion') renderTransfStock();
-  if(id==='aprobaciones') renderAprobaciones();
-  if(id==='admin') renderAdminList();
+  if(id==='aprobaciones')   renderAprobaciones();
+  if(id==='admin')          renderAdminList();
+  if(id==='stock-inicial')  renderStockInicial();
 }
 
 function toggleSidebar() {
@@ -1275,6 +1317,7 @@ function registrarMerma(){
 }
 
 function registrarDespacho(){
+  if(!['maestro'].includes(currentUser?.rol)) return showAlert('d-alert','Solo el Maestro puede registrar despachos','err');
   const fecha=document.getElementById('d-fecha').value; const turno=document.getElementById('d-turno').value;
   const guia=document.getElementById('d-guia').value.trim(); const tipoventa=document.getElementById('d-tipoventa').value;
   const obs=document.getElementById('d-obs').value.trim();
@@ -1294,6 +1337,7 @@ function registrarDespacho(){
 }
 
 function registrarDevolucion(){
+  if(!['supervisor','maestro'].includes(currentUser?.rol)) return showAlert('dev-alert','Solo el Supervisor o Maestro puede registrar devoluciones','err');
   const fecha=document.getElementById('dev-fecha').value; const turno=document.getElementById('dev-turno').value;
   const origen=document.getElementById('dev-origen').value; const guia=document.getElementById('dev-guia').value.trim();
   const motivo=document.getElementById('dev-motivo').value.trim(); const estado=document.getElementById('dev-estado').value;
@@ -1584,8 +1628,86 @@ function _genXL(){
   XLSX.writeFile(wb,`Historial_Pellet_${getToday()}.xlsx`);
 }
 // ══════════════════════════════════════════════════════════════════════════
-// ADMINISTRACIÓN (solo maestro)
+// STOCK INICIAL (solo maestro)
 // ══════════════════════════════════════════════════════════════════════════
+const GRUPOS_SI = [
+  { cont:'si-pallets', grupos:[
+    {titulo:'Pallet 96x15  (1.440 kg/u)', items:[
+      {id:'pallet96-enesa', label:'Enesa',   color:'var(--enesa)'},
+      {id:'pallet96-klor',  label:'K-lor',   color:'var(--klor)'},
+      {id:'pallet96-ecomas',label:'Ecomas',  color:'var(--ecomas)'},
+    ]},
+    {titulo:'Pallet 65x15  (975 kg/u)', items:[
+      {id:'pallet65-enesa', label:'Enesa',   color:'var(--enesa)'},
+      {id:'pallet65-klor',  label:'K-lor',   color:'var(--klor)'},
+      {id:'pallet65-ecomas',label:'Ecomas',  color:'var(--ecomas)'},
+    ]},
+    {titulo:'Bolsas sueltas 15 kg', items:[
+      {id:'bolsa-gen',    label:'Genérico', color:'var(--maxi)'},
+      {id:'bolsa-enesa',  label:'Enesa',    color:'var(--enesa)'},
+      {id:'bolsa-klor',   label:'K-lor',    color:'var(--klor)'},
+      {id:'bolsa-ecomas', label:'Ecomas',   color:'var(--ecomas)'},
+    ]},
+  ]},
+  { cont:'si-maxis', grupos:[
+    {titulo:'Maxisaco 1.000 kg', items:[
+      {id:'maxi1000-gen',label:'Genérico', color:'var(--maxi)'},
+      {id:'maxi1000-ene',label:'Enesa',    color:'var(--enesa)'},
+      {id:'maxi1000-klo',label:'K-lor',    color:'var(--klor)'},
+      {id:'maxi1000-eco',label:'Ecomas',   color:'var(--ecomas)'},
+    ]},
+    {titulo:'Maxisaco 1.200 kg', items:[
+      {id:'maxi1200-gen',label:'Genérico', color:'var(--maxi)'},
+      {id:'maxi1200-ene',label:'Enesa',    color:'var(--enesa)'},
+      {id:'maxi1200-klo',label:'K-lor',    color:'var(--klor)'},
+      {id:'maxi1200-eco',label:'Ecomas',   color:'var(--ecomas)'},
+    ]},
+  ]},
+];
+
+function renderStockInicial(){
+  const s = loadStock();
+  GRUPOS_SI.forEach(sec=>{
+    const cont=document.getElementById(sec.cont); if(!cont) return;
+    cont.innerHTML='';
+    sec.grupos.forEach(g=>{
+      const titulo=document.createElement('div');
+      titulo.style.cssText='font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:12px 0 6px';
+      titulo.textContent=g.titulo;
+      cont.appendChild(titulo);
+      g.items.forEach(it=>{
+        const p=PRODUCTOS.find(x=>x.id===it.id); if(!p) return;
+        const row=document.createElement('div');
+        row.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:6px';
+        row.innerHTML=`
+          <span style="font-size:.82rem;font-weight:500;color:${it.color};min-width:80px">${it.label}</span>
+          <input type="number" id="si-${it.id}" min="0" step="1" placeholder="0"
+            value="${s[it.id]||0}"
+            style="width:90px;border:1.5px solid var(--border2);border-radius:6px;padding:6px 8px;font-family:var(--mono);font-size:.85rem;font-weight:600;outline:none;text-align:right;background:var(--bg)"
+            onfocus="this.style.borderColor='var(--teal)'" onblur="this.style.borderColor='var(--border2)'">
+          <span style="font-family:var(--mono);font-size:.7rem;color:var(--muted)">${p.kgU.toLocaleString('es-CL')} kg/u</span>
+          <span style="font-family:var(--mono);font-size:.72rem;color:var(--teal);font-weight:600" id="si-kg-${it.id}">${((s[it.id]||0)*p.kgU).toLocaleString('es-CL')} kg</span>`;
+        row.querySelector('input').addEventListener('input', e=>{
+          const u=parseFloat(e.target.value)||0;
+          const kgEl=document.getElementById('si-kg-'+it.id);
+          if(kgEl) kgEl.textContent=(u*p.kgU).toLocaleString('es-CL')+' kg';
+        });
+        cont.appendChild(row);
+      });
+    });
+  });
+}
+
+function guardarStockInicial(){
+  const s=loadStock(); let totalUnid=0;
+  GRUPOS_SI.forEach(sec=>sec.grupos.forEach(g=>g.items.forEach(it=>{
+    const val=parseInt(document.getElementById('si-'+it.id)?.value)||0;
+    s[it.id]=val; totalUnid+=val;
+  })));
+  saveStock(s); renderDashboard();
+  const el=document.getElementById('si-alert');
+  if(el){ el.className='alert ok'; el.textContent=`✓ Stock inicial guardado — ${totalUnid} unidades totales configuradas`; setTimeout(()=>el.className='alert',4000); }
+}
 function adminReset(){
   if(!confirm('⚠️ ATENCIÓN\n\n¿Estás seguro de borrar TODOS los movimientos y reiniciar el stock a cero?\n\nEsta acción es irreversible.')) return;
   localStorage.removeItem('pellet_movs');
