@@ -786,6 +786,8 @@ table.data tr.row-rech td { background:#fef2f2;opacity:.7; }
               <label>Producto</label>
               <select id="h-filtro-prod" oninput="renderHistorial()">
                 <option value="">Todos</option>
+                <option value="Pallet 96x15">Pallet 96x15 (1.440 kg)</option>
+                <option value="Pallet 65x15">Pallet 65x15 (975 kg)</option>
                 <option value="Bolsa 15 kg">Bolsa 15 kg</option>
                 <option value="Maxisaco 1000">Maxisaco 1000</option>
                 <option value="Maxisaco 1200">Maxisaco 1200</option>
@@ -967,9 +969,15 @@ function closeSidebar() {
 // DATOS Y CONSTANTES
 // ══════════════════════════════════════════════════════════════════════════
 const PRODUCTOS = [
-  {id:'bolsa-enesa',  nombre:'Bolsa 15 kg',   cliente:'Enesa',   kgU:15,   colorClass:'prod-label-enesa'},
-  {id:'bolsa-klor',   nombre:'Bolsa 15 kg',   cliente:'K-lor',   kgU:15,   colorClass:'prod-label-klor'},
-  {id:'bolsa-ecomas', nombre:'Bolsa 15 kg',   cliente:'Ecomas',  kgU:15,   colorClass:'prod-label-ecomas'},
+  {id:'pallet96-enesa',  nombre:'Pallet 96x15',  cliente:'Enesa',   kgU:1440, colorClass:'prod-label-enesa'},
+  {id:'pallet96-klor',   nombre:'Pallet 96x15',  cliente:'K-lor',   kgU:1440, colorClass:'prod-label-klor'},
+  {id:'pallet96-ecomas', nombre:'Pallet 96x15',  cliente:'Ecomas',  kgU:1440, colorClass:'prod-label-ecomas'},
+  {id:'pallet65-enesa',  nombre:'Pallet 65x15',  cliente:'Enesa',   kgU:975,  colorClass:'prod-label-enesa'},
+  {id:'pallet65-klor',   nombre:'Pallet 65x15',  cliente:'K-lor',   kgU:975,  colorClass:'prod-label-klor'},
+  {id:'pallet65-ecomas', nombre:'Pallet 65x15',  cliente:'Ecomas',  kgU:975,  colorClass:'prod-label-ecomas'},
+  {id:'bolsa-enesa',     nombre:'Bolsa 15 kg',   cliente:'Enesa',   kgU:15,   colorClass:'prod-label-enesa'},
+  {id:'bolsa-klor',      nombre:'Bolsa 15 kg',   cliente:'K-lor',   kgU:15,   colorClass:'prod-label-klor'},
+  {id:'bolsa-ecomas',    nombre:'Bolsa 15 kg',   cliente:'Ecomas',  kgU:15,   colorClass:'prod-label-ecomas'},
   {id:'maxi1000-gen', nombre:'Maxisaco 1000', cliente:'Genérico',kgU:1000, colorClass:'prod-label-maxi'},
   {id:'maxi1000-ene', nombre:'Maxisaco 1000', cliente:'Enesa',   kgU:1000, colorClass:'prod-label-enesa'},
   {id:'maxi1000-klo', nombre:'Maxisaco 1000', cliente:'K-lor',   kgU:1000, colorClass:'prod-label-klor'},
@@ -983,6 +991,12 @@ const CLR_PROD = {Enesa:'#2563eb',  'K-lor':'#059669', Ecomas:'#ea580c', Genéri
 const TAG_CLI  = {Enesa:'tag-enesa','K-lor':'tag-klor',Ecomas:'tag-ecomas',Genérico:'tag-gen'};
 const TIPO_CLS = {Producción:'tb-prod',Merma:'tb-merma',Despacho:'tb-desp',Transformación:'tb-transf',Devolución:'tb-devol'};
 const TIPO_ICO = {Producción:'⚙️',Merma:'⚠️',Despacho:'🚚',Transformación:'🔄',Devolución:'↩️'};
+// Mapa nombre producto → nombre en stock (pallets se acumulan como bolsas en stock base)
+// Los pallets de producción suman al stock de pallets, merma/despacho usa bolsas
+const PROD_NOMBRE_DISPLAY = {
+  'Pallet 96x15': 'Pallet 96x15 (1.440 kg)',
+  'Pallet 65x15': 'Pallet 65x15 (975 kg)',
+};
 
 function loadData(){try{return JSON.parse(localStorage.getItem('pellet_movs')||'[]');}catch(e){return[];}}
 function saveData(d){localStorage.setItem('pellet_movs',JSON.stringify(d));}
@@ -1001,8 +1015,24 @@ function showAlert(id,msg,tipo){
 // ACORDEONES (mismo código que antes)
 // ══════════════════════════════════════════════════════════════════════════
 const GRUPOS_PROD=[
-  {id:'bolsas',titulo:'Bolsas 15 kg',colorVar:'--teal',
-   clientes:[{id:'bolsa-enesa',label:'Enesa',color:'var(--enesa)',kgU:15},{id:'bolsa-klor',label:'K-lor',color:'var(--klor)',kgU:15},{id:'bolsa-ecomas',label:'Ecomas',color:'var(--ecomas)',kgU:15}]},
+  {id:'pallet96',titulo:'Pallet 96x15  (1.440 kg/pallet)',colorVar:'--teal',
+   clientes:[
+     {id:'pallet96-enesa', label:'Enesa',  color:'var(--enesa)',  kgU:1440},
+     {id:'pallet96-klor',  label:'K-lor',  color:'var(--klor)',   kgU:1440},
+     {id:'pallet96-ecomas',label:'Ecomas', color:'var(--ecomas)', kgU:1440},
+   ]},
+  {id:'pallet65',titulo:'Pallet 65x15  (975 kg/pallet)',colorVar:'--teal',
+   clientes:[
+     {id:'pallet65-enesa', label:'Enesa',  color:'var(--enesa)',  kgU:975},
+     {id:'pallet65-klor',  label:'K-lor',  color:'var(--klor)',   kgU:975},
+     {id:'pallet65-ecomas',label:'Ecomas', color:'var(--ecomas)', kgU:975},
+   ]},
+  {id:'bolsas-prod',titulo:'Bolsas sueltas 15 kg',colorVar:'--blue',
+   clientes:[
+     {id:'bolsa-enesa',  label:'Enesa',  color:'var(--enesa)',  kgU:15},
+     {id:'bolsa-klor',   label:'K-lor',  color:'var(--klor)',   kgU:15},
+     {id:'bolsa-ecomas', label:'Ecomas', color:'var(--ecomas)', kgU:15},
+   ]},
   {id:'maxi1000',titulo:'Maxisaco 1.000 kg',colorVar:'--purple',
    clientes:[{id:'maxi1000-gen',label:'Genérico',color:'var(--maxi)',kgU:1000},{id:'maxi1000-ene',label:'Enesa',color:'var(--enesa)',kgU:1000},{id:'maxi1000-klo',label:'K-lor',color:'var(--klor)',kgU:1000},{id:'maxi1000-eco',label:'Ecomas',color:'var(--ecomas)',kgU:1000}]},
   {id:'maxi1200',titulo:'Maxisaco 1.200 kg',colorVar:'--purple',
