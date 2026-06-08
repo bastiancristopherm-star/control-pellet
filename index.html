@@ -559,7 +559,7 @@ table.data tr.row-rech td { background:#fef2f2;opacity:.7; }
           <div class="card">
             <div class="card-title"><span class="card-title-icon">📝</span> Datos del turno</div>
             <div class="field-row field">
-              <div class="field"><label>Fecha</label><input type="date" id="p-fecha"></div>
+              <div class="field"><label>Fecha <span style="font-size:.65rem;color:var(--muted)">(máx. 1 día atrás)</span></label><input type="date" id="p-fecha"></div>
               <div class="field"><label>Turno</label>
                 <select id="p-turno"><option value="Día">Día</option><option value="Noche">Noche</option></select>
               </div>
@@ -924,6 +924,13 @@ function initApp() {
   initStock();
   const hoy = getToday();
   ['p','m','d','t','dev'].forEach(p => { const el=document.getElementById(p+'-fecha'); if(el) el.value=hoy; });
+  // Restricción de fecha en producción: solo hoy y ayer
+  const pFecha = document.getElementById('p-fecha');
+  if(pFecha){
+    const ayer = new Date(); ayer.setDate(ayer.getDate()-1);
+    pFecha.min = ayer.toISOString().slice(0,10);
+    pFecha.max = hoy;
+  }
   buildAcordeonProduccion();
   buildAcordeonMerma();
   buildAcordeonGenerico('despacho-acordeon','d');
@@ -1046,9 +1053,16 @@ const GRUPOS_MERMA=[
   {id:'m-maxi1200',titulo:'Maxisaco 1.200 kg',colorVar:'--red',clientes:[{id:'maxi1200-gen',label:'Genérico',color:'var(--maxi)',kgU:1200},{id:'maxi1200-ene',label:'Enesa',color:'var(--enesa)',kgU:1200},{id:'maxi1200-klo',label:'K-lor',color:'var(--klor)',kgU:1200},{id:'maxi1200-eco',label:'Ecomas',color:'var(--ecomas)',kgU:1200}]},
 ];
 const GRUPOS_BASE=[
-  {id:'bolsas',titulo:'Bolsas 15 kg',colorVar:'--teal',clientes:[{id:'bolsa-enesa',label:'Enesa',color:'var(--enesa)',kgU:15},{id:'bolsa-klor',label:'K-lor',color:'var(--klor)',kgU:15},{id:'bolsa-ecomas',label:'Ecomas',color:'var(--ecomas)',kgU:15}]},
-  {id:'maxi1000',titulo:'Maxisaco 1.000 kg',colorVar:'--purple',clientes:[{id:'maxi1000-gen',label:'Genérico',color:'var(--maxi)',kgU:1000},{id:'maxi1000-ene',label:'Enesa',color:'var(--enesa)',kgU:1000},{id:'maxi1000-klo',label:'K-lor',color:'var(--klor)',kgU:1000},{id:'maxi1000-eco',label:'Ecomas',color:'var(--ecomas)',kgU:1000}]},
-  {id:'maxi1200',titulo:'Maxisaco 1.200 kg',colorVar:'--purple',clientes:[{id:'maxi1200-gen',label:'Genérico',color:'var(--maxi)',kgU:1200},{id:'maxi1200-ene',label:'Enesa',color:'var(--enesa)',kgU:1200},{id:'maxi1200-klo',label:'K-lor',color:'var(--klor)',kgU:1200},{id:'maxi1200-eco',label:'Ecomas',color:'var(--ecomas)',kgU:1200}]},
+  {id:'pallet96',titulo:'Pallet 96x15  (1.440 kg/pallet)',colorVar:'--teal',
+   clientes:[{id:'pallet96-enesa',label:'Enesa',color:'var(--enesa)',kgU:1440},{id:'pallet96-klor',label:'K-lor',color:'var(--klor)',kgU:1440},{id:'pallet96-ecomas',label:'Ecomas',color:'var(--ecomas)',kgU:1440}]},
+  {id:'pallet65',titulo:'Pallet 65x15  (975 kg/pallet)',colorVar:'--teal',
+   clientes:[{id:'pallet65-enesa',label:'Enesa',color:'var(--enesa)',kgU:975},{id:'pallet65-klor',label:'K-lor',color:'var(--klor)',kgU:975},{id:'pallet65-ecomas',label:'Ecomas',color:'var(--ecomas)',kgU:975}]},
+  {id:'bolsas',titulo:'Bolsas sueltas 15 kg',colorVar:'--blue',
+   clientes:[{id:'bolsa-gen',label:'Genérico',color:'var(--maxi)',kgU:15},{id:'bolsa-enesa',label:'Enesa',color:'var(--enesa)',kgU:15},{id:'bolsa-klor',label:'K-lor',color:'var(--klor)',kgU:15},{id:'bolsa-ecomas',label:'Ecomas',color:'var(--ecomas)',kgU:15}]},
+  {id:'maxi1000',titulo:'Maxisaco 1.000 kg',colorVar:'--purple',
+   clientes:[{id:'maxi1000-gen',label:'Genérico',color:'var(--maxi)',kgU:1000},{id:'maxi1000-ene',label:'Enesa',color:'var(--enesa)',kgU:1000},{id:'maxi1000-klo',label:'K-lor',color:'var(--klor)',kgU:1000},{id:'maxi1000-eco',label:'Ecomas',color:'var(--ecomas)',kgU:1000}]},
+  {id:'maxi1200',titulo:'Maxisaco 1.200 kg',colorVar:'--purple',
+   clientes:[{id:'maxi1200-gen',label:'Genérico',color:'var(--maxi)',kgU:1200},{id:'maxi1200-ene',label:'Enesa',color:'var(--enesa)',kgU:1200},{id:'maxi1200-klo',label:'K-lor',color:'var(--klor)',kgU:1200},{id:'maxi1200-eco',label:'Ecomas',color:'var(--ecomas)',kgU:1200}]},
 ];
 
 function buildAcordeon(contId, grupos, prefix, onUpdate) {
@@ -1218,6 +1232,12 @@ function registrarProduccion(){
   const fecha=document.getElementById('p-fecha').value; const turno=document.getElementById('p-turno').value;
   const operador=document.getElementById('p-operador').value.trim(); const obs=document.getElementById('p-obs').value.trim();
   if(!fecha) return showAlert('p-alert','Selecciona la fecha','err');
+  // Validar que no sea más de 1 día atrás
+  const hoyDate=new Date(); hoyDate.setHours(0,0,0,0);
+  const ayerDate=new Date(hoyDate); ayerDate.setDate(ayerDate.getDate()-1);
+  const fechaDate=new Date(fecha+'T00:00:00');
+  if(fechaDate<ayerDate) return showAlert('p-alert','Solo puedes registrar producción de hoy o ayer (máximo 1 día atrás)','err');
+  if(fechaDate>hoyDate) return showAlert('p-alert','No puedes registrar producción con fecha futura','err');
   const vals=getProdValues(); const total=Object.values(vals).reduce((a,b)=>a+b,0);
   if(total===0) return showAlert('p-alert','Ingresa al menos una unidad','err');
   const s=loadStock(); const movs=loadData(); const hora=new Date().toLocaleTimeString('es-CL');
